@@ -41,7 +41,17 @@ uv run pytest
 
 ### Useful commands
 
-Displaying output from the `/dev/ttyUSB0` serial device:
+List USB devices:
+```shell
+lsusb
+```
+
+View USB devices:
+```shell
+usbview
+```
+
+Display output from the `/dev/ttyUSB0` serial device:
 ```shell
 screen /dev/ttyUSB0 115200
 ```
