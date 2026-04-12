@@ -1,8 +1,6 @@
-# Python Project Template - UV
+# XSens-MTi Python Library
 
-![ci](https://github.com/markvilar/python_uv_template/actions/workflows/ubuntu.yml/badge.svg)
-
-A template repository for python packages with integration of [the uv package manager](https://docs.astral.sh/uv/).
+![ci](https://github.com/markvilar/xsens-py/actions/workflows/ubuntu.yml/badge.svg)
 
 
 ### Getting started
@@ -41,16 +39,21 @@ uv run pytest
 ```
 
 
-### Other uses
+### Useful commands
 
-#### Managing packages
-
+Displaying output from the `/dev/ttyUSB0` serial device:
 ```shell
-# Add a new package to the project
-uv add <package>
+screen /dev/ttyUSB0 115200
+```
 
-# Remove a package from the project
-uv remove <package>
+Dumping data from the `/dev/ttyUSB0` serial device to file:
+```shell
+dd if=/dev/ttyUSB0 of=usb_dump.bin bs=1M status=progress
+```
+
+Getting the process IDs for processes that use the `/dev/ttyUSB0` device:
+```shell
+fuser -v /dev/ttyUSB0
 ```
 
 
