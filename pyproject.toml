@@ -1,7 +1,7 @@
 [project]
-name = "python_uv_template"
+name = "xsens"
 version = "0.1.0"
-description = "A template repository for Python packages with uv package manager integration."
+description = "A minimal python library for working with XSens MTi sensors."
 readme = "README.md"
 authors = [
     { name = "Martin Kvisvik Larsen", email = "martin.kvisvik.larsen@hotmail.com" }
@@ -20,18 +20,16 @@ dependencies = [
 ]
 
 [project.scripts]
-entrypoint = "libtemp.entrypoint:main"
-example_script = "scripts.example:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/libtemp", "scripts"]
+packages = ["src/xsens"]
 
 [tool.uv]
 package = true
 
 [tool.ruff]
-line-length = 80
+line-length = 88
