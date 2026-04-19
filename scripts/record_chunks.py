@@ -20,12 +20,23 @@ def stop_handler(signum, frame):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Record raw serial data to a binary file")
+    parser = argparse.ArgumentParser(
+        description="Record raw serial data to a binary file"
+    )
     parser.add_argument("port", help="Serial port, e.g. /dev/ttyUSB0 or /dev/ttyACM0")
     parser.add_argument("output", help="Output binary file path")
-    parser.add_argument("--baud", type=int, default=115200, help="Baud rate (default: 115200)")
-    parser.add_argument("--timeout", type=float, default=1.0, help="Read timeout in seconds (default: 1.0)")
-    parser.add_argument("--append", action="store_true", help="Append to output instead of overwriting")
+    parser.add_argument(
+        "--baud", type=int, default=115200, help="Baud rate (default: 115200)"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=1.0,
+        help="Read timeout in seconds (default: 1.0)",
+    )
+    parser.add_argument(
+        "--append", action="store_true", help="Append to output instead of overwriting"
+    )
     args = parser.parse_args()
 
     signal.signal(signal.SIGINT, stop_handler)
@@ -61,7 +72,9 @@ def main():
         ser.close()
 
     elapsed = max(time.time() - start, 1e-9)
-    sys.stderr.write(f"Captured {total} bytes in {elapsed:.2f} s ({total/elapsed:.1f} B/s)\n")
+    sys.stderr.write(
+        f"Captured {total} bytes in {elapsed:.2f} s ({total/elapsed:.1f} B/s)\n"
+    )
 
 
 if __name__ == "__main__":
