@@ -1,16 +1,17 @@
+"""
+Minimal script for recording data from a serial device.
+"""
+
 import argparse
 import signal
 import sys
 import time
+import serial
+
 from pathlib import Path
 
-try:
-    import serial
-except ImportError:
-    sys.stderr.write("pyserial is required. Install it with: pip install pyserial\n")
-    sys.exit(1)
 
-running = True
+running: bool = True
 
 
 def stop_handler(signum, frame):
