@@ -9,6 +9,7 @@ from .decode import (
     decode_xbus_messages_from_buffer as decode_xbus_messages_from_buffer,
 )
 
+from .data_types import MessageID as MessageID
 from .data_types import XbusFraming as XbusFraming
 from .data_types import PayloadLength as PayloadLength
 from .data_types import XbusMessageHeaderPrefix as XbusMessageHeaderPrefix
