@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from .data_types import XbusFraming
-from .data_types import XbusMessageHeaderPrefix
-from .data_types import XbusMessageHeader
-from .data_types import XbusMessage
+from .datatypes import XbusFraming
+from .datatypes import XbusMessageHeaderPrefix
+from .datatypes import XbusMessageHeader
+from .datatypes import XbusMessage
 
 from .exceptions import MissingHeader
 from .exceptions import MissingChecksum
