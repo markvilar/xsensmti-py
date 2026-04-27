@@ -9,12 +9,12 @@ from .decode import (
     decode_xbus_messages_from_buffer as decode_xbus_messages_from_buffer,
 )
 
-from .data_types import MessageID as MessageID
-from .data_types import XbusFraming as XbusFraming
-from .data_types import PayloadLength as PayloadLength
-from .data_types import XbusMessageHeaderPrefix as XbusMessageHeaderPrefix
-from .data_types import XbusMessageHeader as XbusMessageHeader
-from .data_types import XbusMessage as XbusMessage
+from .datatypes import MessageID as MessageID
+from .datatypes import XbusFraming as XbusFraming
+from .datatypes import PayloadLength as PayloadLength
+from .datatypes import XbusMessageHeaderPrefix as XbusMessageHeaderPrefix
+from .datatypes import XbusMessageHeader as XbusMessageHeader
+from .datatypes import XbusMessage as XbusMessage
 
 from .exceptions import MissingHeader as MissingHeader
 from .exceptions import MissingChecksum as MissingChecksum
