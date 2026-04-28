@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A minimal Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols.
 
+## Conventions
+
+- All Python code uses type hints on variables, function arguments, and return types.
+- Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
+
 ## Commands
 
 ```bash
