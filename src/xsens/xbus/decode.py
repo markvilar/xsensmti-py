@@ -10,6 +10,7 @@ from .datatypes import XbusFraming
 from .datatypes import XbusMessageHeaderPrefix
 from .datatypes import XbusMessageHeader
 from .datatypes import XbusMessage
+from .datatypes import MessageID
 
 from .exceptions import MissingHeader
 from .exceptions import MissingChecksum
@@ -82,12 +83,7 @@ def iter_xbus_messages_from_buffer(buffer: bytes | bytearray) -> Iterator[XbusMe
         prefix: XbusMessageHeaderPrefix = _parse_message_header_prefix(remaining)
 
         # Parse header based on type from header prefix
-        if prefix.is_standard_message():
-            header: XbusMessageHeader = _parse_message_header_standard(remaining)
-        elif prefix.is_extended_message():
-            header: XbusMessageHeader = _parse_message_header_extended(remaining)
-        else:
-            raise NotImplementedError("invalid message type")
+        header: XbusMessageHeader = _parse_message_header_from_prefix(prefix, remaining)
 
         # Select frame from the buffer
         frame: bytes = bytes(remaining[: header.frame_length])
@@ -112,10 +108,24 @@ def _parse_message_header_prefix(buffer: bytes | bytearray) -> XbusMessageHeader
     prefix: XbusMessageHeaderPrefix = XbusMessageHeaderPrefix(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=buffer[2],
+        mid=MessageID(buffer[2]),
         length=buffer[3],
     )
     return prefix
+
+
+def _parse_message_header_from_prefix(
+    prefix: XbusMessageHeaderPrefix, buffer: bytes | bytearray
+) -> XbusMessageHeader:
+    """
+    TODO
+    """
+    if prefix.is_standard_message():
+        return _parse_message_header_standard(buffer)
+    elif prefix.is_extended_message():
+        return _parse_message_header_extended(buffer)
+    else:
+        raise NotImplementedError("invalid message type")
 
 
 def _parse_message_header_standard(buffer: bytes | bytearray) -> XbusMessageHeader:
@@ -128,7 +138,7 @@ def _parse_message_header_standard(buffer: bytes | bytearray) -> XbusMessageHead
     return XbusMessageHeader(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=buffer[2],
+        mid=MessageID(buffer[2]),
         length=buffer[3],
     )
 
@@ -147,7 +157,7 @@ def _parse_message_header_extended(buffer: bytes | bytearray) -> XbusMessageHead
     return XbusMessageHeader(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=buffer[2],
+        mid=MessageID(buffer[2]),
         length=buffer[3],
         ext_length=extended_length,
     )
@@ -164,10 +174,11 @@ def _parse_message_from_header_and_frame(
             f"frame length {len(frame)} does not match header frame length {header.frame_length}"
         )
 
+    payload_start: int
     if header.is_standard_message():
-        payload_start: int = 4
+        payload_start = 4
     elif header.is_extended_message():
-        payload_start: int = 6
+        payload_start = 6
     else:
         raise InvalidPayloadLength("could not determine message type from header")
 
