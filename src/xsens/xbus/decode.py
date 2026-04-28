@@ -118,7 +118,7 @@ def _parse_message_header_from_prefix(
     prefix: XbusMessageHeaderPrefix, buffer: bytes | bytearray
 ) -> XbusMessageHeader:
     """
-    TODO
+    Resolve a full message header from a prefix and buffer, dispatching on standard vs. extended framing.
     """
     if prefix.is_standard_message():
         return _parse_message_header_standard(buffer)
