@@ -152,7 +152,7 @@ def _parse_message_header_extended(buffer: bytes | bytearray) -> XbusMessageHead
     if len(buffer) < 6:
         raise InvalidPayloadLength(f"not enough bytes for payload field: {len(buffer)}")
 
-    extended_length: int = (buffer[4] << 8) | buffer[5]
+    extended_length: int = int.from_bytes(buffer[4:6], byteorder="big")
 
     return XbusMessageHeader(
         preamble=buffer[0],
