@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A minimal Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols.
 
+## Skills
+
+When developing Python code in this project, use these skills at the appropriate moments:
+
+- `/python-library-complete:api-design` — before finalising any new public interface (functions, types, exceptions). Use it to evaluate naming, composability, and error handling before the design is locked in.
+- `/python-library-complete:code-quality` — after implementing a module or non-trivial function. Use it to check for Pythonic idioms, type hint completeness, and mypy strictness issues that ruff won't catch.
+- `/python-library-complete:testing-strategy` — when adding a new module or a protocol feature with structured input space. Use it to design fixtures, parametrization, and property-based tests before writing test code.
+
 ## Conventions
 
 - All Python code uses type hints on variables, function arguments, and return types.
