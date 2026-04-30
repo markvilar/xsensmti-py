@@ -29,13 +29,16 @@ uv run <script>
 
 ```shell
 # Invoke ruff check
-uv run ruff check .
+uv run ruff check src
 
 # Invoke ruff format
-uv run ruff format .
+uv run ruff format src
+
+# Invoke mypy for static checking
+uv run mypy src
 
 # Invoke pytest
-uv run pytest
+uv run pytest tests
 ```
 
 
