@@ -34,7 +34,9 @@ class MessageID(IntEnum):
 
     # Device configuration (section 5.3.5)
     REQ_CONFIGURATION = 0x0C
-    CONFIGURATION = 0x0D  # Device sends full config to host; also sent at startup if enabled
+    CONFIGURATION = (
+        0x0D  # Device sends full config to host; also sent at startup if enabled
+    )
 
     # State control
     GOTOMEASUREMENT = 0x10
