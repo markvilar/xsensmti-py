@@ -9,6 +9,7 @@ import pytest
 from xsens.xbus.datatypes import MessageID
 from xsens.xbus.datatypes import XbusFraming
 from xsens.xbus.decode import decode_xbus_messages_from_buffer
+from xsens.xbus.exceptions import InvalidMessageID
 from xsens.xbus.exceptions import InvalidPayloadLength
 
 
@@ -97,11 +98,11 @@ class TestDecodeXbusMessagesFromBuffer:
         assert len(messages) == 1
         assert messages[0].header.mid == MessageID.GOTOCONFIG
 
-    def test_unknown_mid_raises_value_error(self) -> None:
-        # 0x99 is not a valid MessageID — MessageID(0x99) raises ValueError
+    def test_unknown_mid_raises_invalid_message_id(self) -> None:
         raw = bytes([XbusFraming.PREAMBLE, 0xFF, 0x99, 0x00, 0x67])
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidMessageID) as exc_info:
             decode_xbus_messages_from_buffer(raw)
+        assert exc_info.value.mid == 0x99
 
     def test_truncated_frame_raises_invalid_payload_length(self) -> None:
         # Build a valid header that declares 10 payload bytes, but supply none.
