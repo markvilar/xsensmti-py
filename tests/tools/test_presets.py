@@ -12,7 +12,7 @@ from xsens.mtdata2.datatypes import OutputDataIdentifier
 from xsens.xbus.decode import is_frame_checksum_valid
 from xsens.xbus.encode import encode_xbus_message
 from xsens.xbus.datatypes import MessageID
-from xsens.tools.presets import (
+from xsens.tools.configurator.presets import (
     PRESET_NAMES,
     VALID_RATES,
     build_output_configuration_payload,

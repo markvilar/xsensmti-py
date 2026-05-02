@@ -8,7 +8,7 @@
 #### Installing `uv`
 
 ```shell
-# Install poetry
+# Install uv
 pip3 install --user uv
 ```
 

@@ -10,11 +10,18 @@ from .exceptions import (
     ConfigurationError as ConfigurationError,
 )
 
-from .presets import (
+from .configurator.presets import (
     PRESET_NAMES as PRESET_NAMES,
     VALID_RATES as VALID_RATES,
     get_preset as get_preset,
     build_output_configuration_payload as build_output_configuration_payload,
+)
+
+from .configurator import configure_device as configure_device
+
+from .scanner import (
+    ScanResult as ScanResult,
+    scan_ports as scan_ports,
 )
 
 __all__ = []
