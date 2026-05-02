@@ -21,7 +21,9 @@ from ..scanner import ScanResult, scan_ports
 
 def dispatch_scan_devices(baud: int, timeout: float, usb_only: bool) -> None:
     """Call the scanner and echo found MTi devices to stdout."""
-    results: list[ScanResult] = scan_ports(baud=baud, timeout=timeout, usb_only=usb_only)
+    results: list[ScanResult] = scan_ports(
+        baud=baud, timeout=timeout, usb_only=usb_only
+    )
 
     for result in results:
         label: str = f"  product={result.product_code}" if result.product_code else ""

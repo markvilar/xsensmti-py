@@ -67,7 +67,9 @@ def scan(baud: int, timeout: float, usb_only: bool) -> None:
 )
 def configure(port: str, preset: str, rate: int, baud: int, timeout: float) -> None:
     """Configure an MTi device at PORT with a named output preset."""
-    dispatch_configure_device(port=port, preset_name=preset, rate=rate, baud=baud, timeout=timeout)
+    dispatch_configure_device(
+        port=port, preset_name=preset, rate=rate, baud=baud, timeout=timeout
+    )
 
 
 if __name__ == "__main__":
