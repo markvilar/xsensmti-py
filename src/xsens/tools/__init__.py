@@ -24,4 +24,9 @@ from .scanner import (
     scan_ports as scan_ports,
 )
 
+from .recorder import (
+    RecordingResult as RecordingResult,
+    record_device as record_device,
+)
+
 __all__ = []

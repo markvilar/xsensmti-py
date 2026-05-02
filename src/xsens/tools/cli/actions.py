@@ -4,6 +4,8 @@ Actions that bridge CLI commands to the scanner and configurator tools.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import serial
 
 import click
@@ -16,6 +18,7 @@ from ..exceptions import (
     UnexpectedResponse,
     XsensToolsError,
 )
+from ..recorder import RecordingResult, record_device
 from ..scanner import ScanResult, scan_ports
 
 
@@ -60,6 +63,39 @@ def dispatch_configure_device(
         ConfigurationError,
         XsensToolsError,
     ) as exc:
+        click.echo(f"Error: {exc}", err=True)
+        raise SystemExit(1)
+    except (OSError, serial.SerialException) as exc:
+        click.echo(f"Could not open port {port}: {exc}", err=True)
+        raise SystemExit(1)
+
+
+def dispatch_record_device(
+    port: str,
+    output: str,
+    baud: int,
+    timeout: float,
+    chunk_size: int,
+) -> None:
+    """Verify the device, record its output, and echo the session summary."""
+    output_path: Path = Path(output)
+
+    try:
+        result: RecordingResult = record_device(
+            port=port,
+            output=output_path,
+            baud=baud,
+            timeout=timeout,
+            chunk_size=chunk_size,
+        )
+        rate: float = (
+            result.bytes_recorded / result.duration if result.duration > 0 else 0.0
+        )
+        click.echo(
+            f"Recorded {result.bytes_recorded} bytes in {result.duration:.1f}s"
+            f" ({rate:.0f} B/s) → {result.output_path}"
+        )
+    except (CommandTimeout, UnexpectedResponse, XsensToolsError) as exc:
         click.echo(f"Error: {exc}", err=True)
         raise SystemExit(1)
     except (OSError, serial.SerialException) as exc:
