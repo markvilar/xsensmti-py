@@ -12,26 +12,72 @@ from enum import IntEnum
 # Preamble | BID | MID | LEN | [LENext] | DATA | CHECKSUM
 
 
-# TODO: Add more message identifiers
 class MessageID(IntEnum):
     """
     Xbus message identifier (protocol MID) defining the type of message
     and how its payload should be interpreted.
+
+    For request/set commands that share one MID (e.g. OUTPUT_CONFIGURATION),
+    an empty payload means "request current value" and a non-empty payload
+    means "set new value". The device always responds with the _ACK MID.
     """
 
-    # Device info
+    # Device identification
     REQ_DEVICE_ID = 0x00
     DEVICE_ID = 0x01
+    REQ_PRODUCT_CODE = 0x1C
+    PRODUCT_CODE = 0x1D
+    REQ_HARDWARE_VERSION = 0x1E
+    HARDWARE_VERSION = 0x1F
+    REQ_FIRMWARE_REVISION = 0x12
+    FIRMWARE_REVISION = 0x13
 
-    # Configuration / mode control
+    # Device configuration (section 5.3.5)
+    REQ_CONFIGURATION = 0x0C
+    CONFIGURATION = (
+        0x0D  # Device sends full config to host; also sent at startup if enabled
+    )
+
+    # State control
+    GOTOMEASUREMENT = 0x10
+    GOTOMEASUREMENT_ACK = 0x11
     GOTOCONFIG = 0x30
     GOTOCONFIG_ACK = 0x31
-    MTDATA = 0x32  # legacy data
-    REQ_DATA = 0x34  # request MTData (legacy)
-    MTDATA2 = 0x36  # modern data packet
-
-    # Reset / misc
+    WAKEUP = 0x3E
+    WAKEUP_ACK = 0x3F
     RESET = 0x40
+    RESET_ACK = 0x41
+
+    # Error / warning
+    ERROR = 0x42
+    WARNING = 0x43
+
+    # Communication settings
+    SET_BAUDRATE = 0x18
+    SET_BAUDRATE_ACK = 0x19
+
+    # Output configuration — empty payload = request, non-empty = set
+    OUTPUT_CONFIGURATION = 0xC0
+    OUTPUT_CONFIGURATION_ACK = 0xC1
+
+    # String output — empty payload = request, non-empty = set
+    STRING_OUTPUT_TYPE = 0x8E
+    STRING_OUTPUT_TYPE_ACK = 0x8F
+
+    # Filter profile — empty payload = request, non-empty = set
+    FILTER_PROFILE = 0x64
+    FILTER_PROFILE_ACK = 0x65
+
+    # GNSS platform (MTi-700 / GNSS/INS) — empty payload = request, non-empty = set
+    GNSS_PLATFORM = 0x76
+    GNSS_PLATFORM_ACK = 0x77
+
+    # Legacy data
+    MTDATA = 0x32
+    REQ_DATA = 0x34
+
+    # MTData2
+    MTDATA2 = 0x36
 
 
 class XbusFraming(IntEnum):

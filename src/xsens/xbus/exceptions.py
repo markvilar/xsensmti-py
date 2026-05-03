@@ -37,3 +37,11 @@ class InvalidChecksum(Exception):
     """Raised when a parsed message has an invalid checksum."""
 
     pass
+
+
+class InvalidMessageID(Exception):
+    """Raised when the MID byte does not correspond to a known MessageID."""
+
+    def __init__(self, mid: int) -> None:
+        self.mid = mid
+        super().__init__(f"unknown message ID: {mid:#04x}")

@@ -14,6 +14,7 @@ from .datatypes import MessageID
 
 from .exceptions import MissingHeader
 from .exceptions import MissingChecksum
+from .exceptions import InvalidMessageID
 from .exceptions import InvalidPayloadLength
 
 
@@ -105,13 +106,16 @@ def _parse_message_header_prefix(buffer: bytes | bytearray) -> XbusMessageHeader
     """
     if len(buffer) < 4:
         raise MissingHeader(f"not enough bytes for a valid header: {len(buffer)}")
-    prefix: XbusMessageHeaderPrefix = XbusMessageHeaderPrefix(
+    try:
+        mid: MessageID = MessageID(buffer[2])
+    except ValueError:
+        raise InvalidMessageID(buffer[2])
+    return XbusMessageHeaderPrefix(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=MessageID(buffer[2]),
+        mid=mid,
         length=buffer[3],
     )
-    return prefix
 
 
 def _parse_message_header_from_prefix(
@@ -134,11 +138,14 @@ def _parse_message_header_standard(buffer: bytes | bytearray) -> XbusMessageHead
     """
     if len(buffer) < 4:
         raise MissingHeader(f"not enough bytes for a valid header: {len(buffer)}")
-
+    try:
+        mid: MessageID = MessageID(buffer[2])
+    except ValueError:
+        raise InvalidMessageID(buffer[2])
     return XbusMessageHeader(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=MessageID(buffer[2]),
+        mid=mid,
         length=buffer[3],
     )
 
@@ -151,13 +158,15 @@ def _parse_message_header_extended(buffer: bytes | bytearray) -> XbusMessageHead
         raise MissingHeader(f"not enough bytes for a valid header: {len(buffer)}")
     if len(buffer) < 6:
         raise InvalidPayloadLength(f"not enough bytes for payload field: {len(buffer)}")
-
+    try:
+        mid: MessageID = MessageID(buffer[2])
+    except ValueError:
+        raise InvalidMessageID(buffer[2])
     extended_length: int = int.from_bytes(buffer[4:6], byteorder="big")
-
     return XbusMessageHeader(
         preamble=buffer[0],
         bid=buffer[1],
-        mid=MessageID(buffer[2]),
+        mid=mid,
         length=buffer[3],
         ext_length=extended_length,
     )

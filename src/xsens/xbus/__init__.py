@@ -19,8 +19,11 @@ from .datatypes import XbusMessage as XbusMessage
 from .exceptions import MissingHeader as MissingHeader
 from .exceptions import MissingChecksum as MissingChecksum
 from .exceptions import InvalidPreamble as InvalidPreamble
+from .exceptions import InvalidMessageID as InvalidMessageID
 from .exceptions import InvalidPayloadLength as InvalidPayloadLength
 from .exceptions import IncompletePayload as IncompletePayload
 from .exceptions import InvalidChecksum as InvalidChecksum
+
+from .encode import encode_xbus_message as encode_xbus_message
 
 __all__ = []
