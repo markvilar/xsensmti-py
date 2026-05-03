@@ -2,7 +2,7 @@
 
 ## Symptom
 
-`xsens scan` reports "No MTi devices found" even though the device is visible in `lsusb`
+`xsensmti scan` reports "No MTi devices found" even though the device is visible in `lsusb`
 and `/dev/ttyUSB0` exists. With `--verbose`, the log shows:
 
 ```
@@ -139,10 +139,10 @@ ser.close()
 
 ### 3. Verification
 
-After running the script, `xsens scan` should find the device normally:
+After running the script, `xsensmti scan` should find the device normally:
 
 ```
-$ uv run xsens scan
+$ uv run xsensmtimti scan
 /dev/ttyUSB0  device_id=0x...  baud=115200  product=MTi-G-700
 ```
 

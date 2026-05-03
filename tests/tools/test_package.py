@@ -6,17 +6,17 @@ from __future__ import annotations
 
 
 def test_can_import_xsens_tools() -> None:
-    import xsens.tools  # noqa: F401
+    import xsensmti.tools  # noqa: F401
 
 
 def test_can_import_cli_without_side_effects() -> None:
-    from xsens.tools.cli.commands import main
+    from xsensmti.tools.cli.commands import main
 
     assert callable(main)
 
 
 def test_can_import_exceptions() -> None:
-    from xsens.tools import (
+    from xsensmti.tools import (
         CommandTimeout,
         ConfigurationError,
         DeviceNotFound,
@@ -31,6 +31,6 @@ def test_can_import_exceptions() -> None:
 
 
 def test_can_import_presets() -> None:
-    from xsens.tools import PRESET_NAMES
+    from xsensmti.tools import PRESET_NAMES
 
     assert "gnss" in PRESET_NAMES

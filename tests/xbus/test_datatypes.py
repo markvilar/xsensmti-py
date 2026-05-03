@@ -4,10 +4,10 @@ Unit tests for xbus datatype properties and methods.
 
 from __future__ import annotations
 
-from xsens.xbus.datatypes import XbusMessageID
-from xsens.xbus.datatypes import XbusFraming
-from xsens.xbus.datatypes import XbusMessageHeader
-from xsens.xbus.datatypes import XbusMessageHeaderPrefix
+from xsensmti.xbus.datatypes import XbusMessageID
+from xsensmti.xbus.datatypes import XbusFraming
+from xsensmti.xbus.datatypes import XbusMessageHeader
+from xsensmti.xbus.datatypes import XbusMessageHeaderPrefix
 
 
 def _make_standard_prefix(length: int = 0x00) -> XbusMessageHeaderPrefix:
