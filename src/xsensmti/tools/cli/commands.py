@@ -78,7 +78,7 @@ def configure(port: str, preset: str, rate: int, baud: int, timeout: float) -> N
 
 @main.command()
 @click.argument("port")
-@click.argument("output")
+@click.argument("output", required=False, default=None)
 @click.option(
     "--baud", type=int, default=115200, show_default=True, help="Serial port baud rate."
 )
@@ -96,8 +96,13 @@ def configure(port: str, preset: str, rate: int, baud: int, timeout: float) -> N
     show_default=True,
     help="Read chunk size in bytes.",
 )
-def record(port: str, output: str, baud: int, timeout: float, chunk_size: int) -> None:
-    """Record raw binary output from an MTi device at PORT to OUTPUT."""
+def record(
+    port: str, output: str | None, baud: int, timeout: float, chunk_size: int
+) -> None:
+    """Record raw binary output from an MTi device at PORT to OUTPUT.
+
+    OUTPUT defaults to data/recordings/YYYYMMDD_HHmmSS_xsensmti_recording.bin.
+    """
     dispatch_record_device(
         port=port, output=output, baud=baud, timeout=timeout, chunk_size=chunk_size
     )

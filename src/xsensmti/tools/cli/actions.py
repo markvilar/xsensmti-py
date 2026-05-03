@@ -4,6 +4,7 @@ Actions that bridge CLI commands to the scanner and configurator tools.
 
 from __future__ import annotations
 
+import datetime
 import serial
 import click
 
@@ -68,15 +69,24 @@ def dispatch_configure_device(
         raise SystemExit(1)
 
 
+_DEFAULT_RECORDINGS_DIR: Path = Path("data/recordings")
+
+
 def dispatch_record_device(
     port: str,
-    output: str,
+    output: str | None,
     baud: int,
     timeout: float,
     chunk_size: int,
 ) -> None:
     """Verify the device, record its output, and echo the session summary."""
-    output_path: Path = Path(output)
+    if output is None:
+        timestamp: str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path: Path = (
+            _DEFAULT_RECORDINGS_DIR / f"{timestamp}_xsensmti_recording.bin"
+        )
+    else:
+        output_path = Path(output)
 
     try:
         result: RecordingResult = record_device(
@@ -96,6 +106,9 @@ def dispatch_record_device(
     except (CommandTimeout, UnexpectedResponse, XsensToolsError) as exc:
         click.echo(f"Error: {exc}", err=True)
         raise SystemExit(1)
-    except (OSError, serial.SerialException) as exc:
+    except OSError as exc:
         click.echo(f"Could not open port {port}: {exc}", err=True)
+        raise SystemExit(1)
+    except serial.SerialException as exc:
+        click.echo(f"Serial error on {port}: {exc}", err=True)
         raise SystemExit(1)
