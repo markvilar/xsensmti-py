@@ -5,14 +5,12 @@ Recorder for raw binary output from XSens MTi devices.
 from __future__ import annotations
 
 import time
+import serial
+
 from dataclasses import dataclass
 from pathlib import Path
-
-import serial
 from loguru import logger
-
-from xsens.xbus.datatypes import XbusMessageID, XbusMessage
-
+from xsens.xbus.datatypes import XbusMessage, XbusMessageID
 from ..serial_io import open_serial_port, send_and_receive
 
 

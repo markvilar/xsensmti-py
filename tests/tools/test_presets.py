@@ -5,7 +5,6 @@ Unit tests for output configuration presets.
 from __future__ import annotations
 
 import struct
-
 import pytest
 
 from xsens.mtdata2.datatypes import OutputDataIdentifier

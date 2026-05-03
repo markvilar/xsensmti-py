@@ -5,6 +5,7 @@ Decoders that unpack OutputDataPacket.data bytes into typed reading dataclasses.
 from __future__ import annotations
 
 import struct
+
 from collections.abc import Callable
 
 from .datatypes import OutputDataIdentifier

@@ -5,24 +5,22 @@ Scanner for connected XSens MTi devices.
 from __future__ import annotations
 
 import time
-from collections.abc import Sequence
-from dataclasses import dataclass
-
 import serial
 import serial.tools.list_ports
+
+from collections.abc import Sequence
+from dataclasses import dataclass
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
-
-from xsens.xbus.datatypes import XbusMessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessage, XbusMessageID
 from xsens.xbus.decode import iter_xbus_messages_from_buffer
 from xsens.xbus.exceptions import (
     IncompletePayload,
-    InvalidXbusMessageID,
     InvalidPayloadLength,
+    InvalidXbusMessageID,
     MissingChecksum,
     MissingHeader,
 )
-
 from ..exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
 from ..serial_io import open_serial_port, send_and_receive, send_message
 

@@ -5,8 +5,8 @@ CLI entry point for XSens MTi sensor tools.
 from __future__ import annotations
 
 import sys
-
 import click
+
 from loguru import logger
 
 from ..configurator.presets import PRESET_NAMES
