@@ -8,12 +8,12 @@ import time
 
 import serial
 
-from xsens.xbus.datatypes import MessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessageID, XbusMessage
 from xsens.xbus.decode import iter_xbus_messages_from_buffer
 from xsens.xbus.encode import encode_xbus_message
 from xsens.xbus.exceptions import (
     IncompletePayload,
-    InvalidMessageID,
+    InvalidXbusMessageID,
     InvalidPayloadLength,
     MissingChecksum,
     MissingHeader,
@@ -49,7 +49,7 @@ def open_serial_port(
 
 def send_message(
     ser: serial.Serial,
-    mid: MessageID | int,
+    mid: XbusMessageID | int,
     payload: bytes = b"",
     bid: int = 0xFF,
 ) -> None:
@@ -59,7 +59,7 @@ def send_message(
 
 def receive_message(
     ser: serial.Serial,
-    expected_mid: MessageID,
+    expected_mid: XbusMessageID,
     timeout: float = 2.0,
     chunk_size: int = 256,
 ) -> XbusMessage:
@@ -81,19 +81,19 @@ def receive_message(
 
         try:
             for message in iter_xbus_messages_from_buffer(accumulator):
-                mid: MessageID
+                mid: XbusMessageID
                 try:
-                    mid = MessageID(message.header.mid)
+                    mid = XbusMessageID(message.header.mid)
                 except ValueError:
                     continue
 
                 if mid == expected_mid:
                     return message
 
-                if mid in (MessageID.ERROR, MessageID.WARNING):
+                if mid in (XbusMessageID.ERROR, XbusMessageID.WARNING):
                     raise UnexpectedResponse(expected=expected_mid, received=mid)
         except (
-            InvalidMessageID,
+            InvalidXbusMessageID,
             InvalidPayloadLength,
             IncompletePayload,
             MissingHeader,
@@ -107,9 +107,9 @@ def receive_message(
 
 def send_and_receive(
     ser: serial.Serial,
-    mid: MessageID | int,
+    mid: XbusMessageID | int,
     payload: bytes = b"",
-    expected_mid: MessageID | None = None,
+    expected_mid: XbusMessageID | None = None,
     timeout: float = 2.0,
     bid: int = 0xFF,
 ) -> XbusMessage:
@@ -120,7 +120,7 @@ def send_and_receive(
     convention used throughout the Xbus protocol).
     """
     if expected_mid is None:
-        expected_mid = MessageID(int(mid) + 1)
+        expected_mid = XbusMessageID(int(mid) + 1)
 
     send_message(ser, mid, payload, bid)
     return receive_message(ser, expected_mid, timeout)

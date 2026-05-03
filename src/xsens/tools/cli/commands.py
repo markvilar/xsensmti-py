@@ -10,7 +10,11 @@ import click
 from loguru import logger
 
 from ..configurator.presets import PRESET_NAMES
-from .actions import dispatch_configure_device, dispatch_scan_devices
+from .actions import (
+    dispatch_configure_device,
+    dispatch_record_device,
+    dispatch_scan_devices,
+)
 
 
 @click.group()
@@ -69,6 +73,33 @@ def configure(port: str, preset: str, rate: int, baud: int, timeout: float) -> N
     """Configure an MTi device at PORT with a named output preset."""
     dispatch_configure_device(
         port=port, preset_name=preset, rate=rate, baud=baud, timeout=timeout
+    )
+
+
+@main.command()
+@click.argument("port")
+@click.argument("output")
+@click.option(
+    "--baud", type=int, default=115200, show_default=True, help="Serial port baud rate."
+)
+@click.option(
+    "--timeout",
+    type=float,
+    default=5.0,
+    show_default=True,
+    help="Per-command handshake timeout in seconds.",
+)
+@click.option(
+    "--chunk-size",
+    type=int,
+    default=4096,
+    show_default=True,
+    help="Read chunk size in bytes.",
+)
+def record(port: str, output: str, baud: int, timeout: float, chunk_size: int) -> None:
+    """Record raw binary output from an MTi device at PORT to OUTPUT."""
+    dispatch_record_device(
+        port=port, output=output, baud=baud, timeout=timeout, chunk_size=chunk_size
     )
 
 

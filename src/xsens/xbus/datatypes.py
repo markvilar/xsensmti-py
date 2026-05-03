@@ -12,7 +12,7 @@ from enum import IntEnum
 # Preamble | BID | MID | LEN | [LENext] | DATA | CHECKSUM
 
 
-class MessageID(IntEnum):
+class XbusMessageID(IntEnum):
     """
     Xbus message identifier (protocol MID) defining the type of message
     and how its payload should be interpreted.
@@ -100,7 +100,7 @@ class XbusMessageHeaderPrefix:
 
     preamble: int
     bid: int
-    mid: MessageID
+    mid: XbusMessageID
     length: int
 
     def is_extended_message(self) -> bool:
@@ -132,7 +132,7 @@ class XbusMessageHeader:
 
     preamble: int
     bid: int
-    mid: MessageID
+    mid: XbusMessageID
     length: int
     ext_length: int | None = None
 
