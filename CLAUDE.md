@@ -29,7 +29,7 @@ uv sync --all-extras --dev
 uv run pytest
 
 # Run a single test
-uv run pytest tests/xbus/test_package.py::test_can_import_xsens_xbus
+uv run pytest tests/xbus/test_package.py::test_can_import_xsensmti_xbus
 
 # Lint
 uv run ruff check .
@@ -43,7 +43,7 @@ uv build
 
 ## Architecture
 
-The library lives under `src/xsens/` as a namespace package with two protocol modules:
+The library lives under `src/xsensmti/` as a namespace package with two protocol modules:
 
 **`xbus/`** — parses the Xbus binary framing layer used by XSens devices over serial.
 - `datatypes.py` — enums and dataclasses: `MessageID`, `XbusFraming`, `PayloadLength`, `XbusMessage`, `XbusMessageHeader`

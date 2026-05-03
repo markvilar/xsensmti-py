@@ -8,10 +8,10 @@ import time
 
 import serial
 
-from xsens.xbus.datatypes import XbusMessage, XbusMessageID
-from xsens.xbus.decode import iter_xbus_messages_from_buffer
-from xsens.xbus.encode import encode_xbus_message
-from xsens.xbus.exceptions import (
+from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
+from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
+from xsensmti.xbus.encode import encode_xbus_message
+from xsensmti.xbus.exceptions import (
     IncompletePayload,
     InvalidXbusMessageID,
     InvalidPayloadLength,

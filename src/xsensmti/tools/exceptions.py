@@ -4,7 +4,7 @@ Exceptions raised by xsens.tools operations.
 
 from __future__ import annotations
 
-from xsens.xbus.datatypes import XbusMessageID
+from xsensmti.xbus.datatypes import XbusMessageID
 
 
 class XsensToolsError(Exception):

@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import pytest
 
-from xsens.xbus.datatypes import XbusMessageID
-from xsens.xbus.datatypes import XbusFraming
-from xsens.xbus.datatypes import XbusMessageHeader
-from xsens.xbus.datatypes import XbusMessage
-from xsens.xbus.decode import is_frame_checksum_valid
-from xsens.xbus.decode import is_message_checksum_valid
-from xsens.xbus.exceptions import InvalidPayloadLength
+from xsensmti.xbus.datatypes import XbusMessageID
+from xsensmti.xbus.datatypes import XbusFraming
+from xsensmti.xbus.datatypes import XbusMessageHeader
+from xsensmti.xbus.datatypes import XbusMessage
+from xsensmti.xbus.decode import is_frame_checksum_valid
+from xsensmti.xbus.decode import is_message_checksum_valid
+from xsensmti.xbus.exceptions import InvalidPayloadLength
 
 
 def _make_standard_frame(bid: int, mid: int, payload: bytes) -> bytes:

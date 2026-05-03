@@ -12,9 +12,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
-from xsens.xbus.datatypes import XbusMessage, XbusMessageID
-from xsens.xbus.decode import iter_xbus_messages_from_buffer
-from xsens.xbus.exceptions import (
+from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
+from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
+from xsensmti.xbus.exceptions import (
     IncompletePayload,
     InvalidPayloadLength,
     InvalidXbusMessageID,

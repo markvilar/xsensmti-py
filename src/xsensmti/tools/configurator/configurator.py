@@ -7,7 +7,7 @@ from __future__ import annotations
 import serial
 
 from loguru import logger
-from xsens.xbus.datatypes import XbusMessage, XbusMessageID
+from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
 from ..serial_io import open_serial_port, send_and_receive
 from .presets import OutputPreset, build_output_configuration_payload
 

@@ -8,8 +8,8 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import BinaryIO
 from loguru import logger
-from xsens.xbus import XbusMessage
-from xsens.xbus import decode_xbus_messages_from_buffer
+from xsensmti.xbus import XbusMessage
+from xsensmti.xbus import decode_xbus_messages_from_buffer
 
 
 def iter_chunks(path: Path, chunk_size: int) -> Generator[bytes, None, None]:
