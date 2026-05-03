@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-xsens = "xsens.tools.cli:main"
+xsens = "xsens.tools.cli.commands:main"
 
 [build-system]
 requires = ["hatchling"]
