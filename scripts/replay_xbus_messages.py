@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
+import click
+
 from collections.abc import Generator
 from pathlib import Path
 from typing import BinaryIO
-
-import click
-
 from loguru import logger
-
 from xsens.xbus import XbusMessage
 from xsens.xbus import decode_xbus_messages_from_buffer
 

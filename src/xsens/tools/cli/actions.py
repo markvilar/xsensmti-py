@@ -4,12 +4,10 @@ Actions that bridge CLI commands to the scanner and configurator tools.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import serial
-
 import click
 
+from pathlib import Path
 from ..configurator import configure_device
 from ..configurator.presets import OutputPreset, get_preset
 from ..exceptions import (

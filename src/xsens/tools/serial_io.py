@@ -8,7 +8,7 @@ import time
 
 import serial
 
-from xsens.xbus.datatypes import XbusMessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessage, XbusMessageID
 from xsens.xbus.decode import iter_xbus_messages_from_buffer
 from xsens.xbus.encode import encode_xbus_message
 from xsens.xbus.exceptions import (
