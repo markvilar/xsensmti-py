@@ -103,6 +103,69 @@ class ScanResult:
     product_code: str
 
 
+@dataclass(frozen=True)
+class ScanOptions:
+    """Parameters controlling how a port scan is performed."""
+
+    baud: int = 115200
+    timeout: float = 2.0
+
+
+def scan_port(port: str, options: ScanOptions | None = None) -> ScanResult | None:
+    """
+    Probe a single serial port and return a ScanResult if an MTi device is found.
+
+    Returns None when no device is detected or the port cannot be opened.
+    """
+    opts: ScanOptions = options or ScanOptions()
+    ser: serial.Serial | None = None
+
+    try:
+        ser = open_serial_port(port, opts.baud, read_timeout=0.1)
+        ser.reset_input_buffer()
+
+        _gotoconfig(ser, opts.timeout)
+
+        device_id_msg: XbusMessage = send_and_receive(
+            ser,
+            XbusMessageID.REQ_DEVICE_ID,
+            expected_mid=XbusMessageID.DEVICE_ID,
+            timeout=opts.timeout,
+        )
+        device_id: int = int.from_bytes(device_id_msg.payload, "big")
+
+        product_code: str = ""
+        try:
+            product_code_msg: XbusMessage = send_and_receive(
+                ser,
+                XbusMessageID.REQ_PRODUCT_CODE,
+                expected_mid=XbusMessageID.PRODUCT_CODE,
+                timeout=opts.timeout,
+            )
+            product_code = product_code_msg.payload.rstrip(b"\x00").decode(
+                "ascii", errors="replace"
+            )
+        except (CommandTimeout, UnexpectedResponse):
+            pass
+
+        return ScanResult(
+            port=port,
+            device_id=device_id,
+            baud=opts.baud,
+            product_code=product_code,
+        )
+
+    except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
+        logger.debug(f"{port}: no MTi device found")
+        return None
+    except (OSError, serial.SerialException) as exc:
+        logger.debug(f"{port}: could not open port: {exc}")
+        return None
+    finally:
+        if ser is not None:
+            ser.close()
+
+
 def scan_ports(
     baud: int = 115200,
     timeout: float = 2.0,
@@ -116,55 +179,12 @@ def scan_ports(
     if usb_only:
         ports = [p for p in ports if p.vid is not None]
 
+    opts: ScanOptions = ScanOptions(baud=baud, timeout=timeout)
+
     results: list[ScanResult] = []
-
     for port_info in ports:
-        port_name: str = port_info.device
-        ser: serial.Serial | None = None
-
-        try:
-            ser = open_serial_port(port_name, baud, read_timeout=0.1)
-            ser.reset_input_buffer()
-
-            _gotoconfig(ser, timeout)
-
-            device_id_msg: XbusMessage = send_and_receive(
-                ser,
-                XbusMessageID.REQ_DEVICE_ID,
-                expected_mid=XbusMessageID.DEVICE_ID,
-                timeout=timeout,
-            )
-            device_id: int = int.from_bytes(device_id_msg.payload, "big")
-
-            product_code: str = ""
-            try:
-                product_code_msg: XbusMessage = send_and_receive(
-                    ser,
-                    XbusMessageID.REQ_PRODUCT_CODE,
-                    expected_mid=XbusMessageID.PRODUCT_CODE,
-                    timeout=timeout,
-                )
-                product_code = product_code_msg.payload.rstrip(b"\x00").decode(
-                    "ascii", errors="replace"
-                )
-            except (CommandTimeout, UnexpectedResponse):
-                pass
-
-            results.append(
-                ScanResult(
-                    port=port_name,
-                    device_id=device_id,
-                    baud=baud,
-                    product_code=product_code,
-                )
-            )
-
-        except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
-            logger.debug(f"{port_name}: no MTi device found")
-        except (OSError, serial.SerialException) as exc:
-            logger.debug(f"{port_name}: could not open port: {exc}")
-        finally:
-            if ser is not None:
-                ser.close()
+        result: ScanResult | None = scan_port(port_info.device, opts)
+        if result is not None:
+            results.append(result)
 
     return results
