@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from xsens.xbus.datatypes import MessageID
+from xsens.xbus.datatypes import XbusMessageID
 from xsens.xbus.datatypes import XbusMessage
 
 from .datatypes import OutputDataIdentifier
@@ -28,9 +28,9 @@ def iter_mtdata2_packets_from_message(
     """
     Yield MTData2 packets parsed from an MTDATA2 XbusMessage payload.
     """
-    if message.header.mid != MessageID.MTDATA2:
+    if message.header.mid != XbusMessageID.MTDATA2:
         raise NotMTData2Message(
-            f"expected MID {MessageID.MTDATA2:#x}, got {message.header.mid:#x}"
+            f"expected MID {XbusMessageID.MTDATA2:#x}, got {message.header.mid:#x}"
         )
     yield from iter_mtdata2_packets_from_payload(message.payload)
 

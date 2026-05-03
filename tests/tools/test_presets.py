@@ -11,7 +11,7 @@ import pytest
 from xsens.mtdata2.datatypes import OutputDataIdentifier
 from xsens.xbus.decode import is_frame_checksum_valid
 from xsens.xbus.encode import encode_xbus_message
-from xsens.xbus.datatypes import MessageID
+from xsens.xbus.datatypes import XbusMessageID
 from xsens.tools.configurator.presets import (
     PRESET_NAMES,
     VALID_RATES,
@@ -87,7 +87,7 @@ class TestBuildOutputConfigurationPayload:
         for name in PRESET_NAMES:
             preset = get_preset(name)
             payload = build_output_configuration_payload(preset)
-            frame = encode_xbus_message(MessageID.OUTPUT_CONFIGURATION, payload=payload)
+            frame = encode_xbus_message(XbusMessageID.OUTPUT_CONFIGURATION, payload=payload)
             assert is_frame_checksum_valid(
                 frame
             ), f"invalid checksum for preset '{name}'"

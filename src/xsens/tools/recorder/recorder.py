@@ -11,7 +11,7 @@ from pathlib import Path
 import serial
 from loguru import logger
 
-from xsens.xbus.datatypes import MessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessageID, XbusMessage
 
 from ..serial_io import open_serial_port, send_and_receive
 
@@ -50,15 +50,15 @@ def record_device(
 
         send_and_receive(
             ser,
-            MessageID.GOTOCONFIG,
-            expected_mid=MessageID.GOTOCONFIG_ACK,
+            XbusMessageID.GOTOCONFIG,
+            expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=timeout,
         )
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
-            MessageID.REQ_DEVICE_ID,
-            expected_mid=MessageID.DEVICE_ID,
+            XbusMessageID.REQ_DEVICE_ID,
+            expected_mid=XbusMessageID.DEVICE_ID,
             timeout=timeout,
         )
         device_id: int = int.from_bytes(device_id_msg.payload, "big")
@@ -66,8 +66,8 @@ def record_device(
 
         send_and_receive(
             ser,
-            MessageID.GOTOMEASUREMENT,
-            expected_mid=MessageID.GOTOMEASUREMENT_ACK,
+            XbusMessageID.GOTOMEASUREMENT,
+            expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
             timeout=timeout,
         )
         logger.info(f"Recording to {output} — press Ctrl-C to stop.")

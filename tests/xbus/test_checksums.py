@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from xsens.xbus.datatypes import MessageID
+from xsens.xbus.datatypes import XbusMessageID
 from xsens.xbus.datatypes import XbusFraming
 from xsens.xbus.datatypes import XbusMessageHeader
 from xsens.xbus.datatypes import XbusMessage
@@ -32,7 +32,7 @@ def _parse_standard_message(frame: bytes) -> XbusMessage:
     header = XbusMessageHeader(
         preamble=frame[0],
         bid=frame[1],
-        mid=MessageID(frame[2]),
+        mid=XbusMessageID(frame[2]),
         length=frame[3],
     )
     payload = frame[4:-1]
@@ -45,7 +45,7 @@ def _parse_extended_message(frame: bytes) -> XbusMessage:
     header = XbusMessageHeader(
         preamble=frame[0],
         bid=frame[1],
-        mid=MessageID(frame[2]),
+        mid=XbusMessageID(frame[2]),
         length=frame[3],
         ext_length=ext_length,
     )
@@ -56,41 +56,41 @@ def _parse_extended_message(frame: bytes) -> XbusMessage:
 
 class TestIsFrameChecksumValid:
     def test_valid_standard_frame(self) -> None:
-        frame = _make_standard_frame(0xFF, MessageID.MTDATA2, b"")
+        frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"")
         assert is_frame_checksum_valid(frame) is True
 
     def test_valid_standard_frame_with_payload(self) -> None:
-        frame = _make_standard_frame(0xFF, MessageID.MTDATA2, b"\x01\x02\x03")
+        frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02\x03")
         assert is_frame_checksum_valid(frame) is True
 
     def test_valid_extended_frame(self) -> None:
-        frame = _make_extended_frame(0xFF, MessageID.MTDATA2, b"\xab" * 300)
+        frame = _make_extended_frame(0xFF, XbusMessageID.MTDATA2, b"\xab" * 300)
         assert is_frame_checksum_valid(frame) is True
 
     def test_invalid_when_checksum_byte_is_wrong(self) -> None:
-        frame = bytearray(_make_standard_frame(0xFF, MessageID.MTDATA2, b"\x01"))
+        frame = bytearray(_make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01"))
         frame[-1] ^= 0x01
         assert is_frame_checksum_valid(bytes(frame)) is False
 
     def test_invalid_when_payload_byte_is_corrupted(self) -> None:
-        frame = bytearray(_make_standard_frame(0xFF, MessageID.MTDATA2, b"\x01\x02"))
+        frame = bytearray(_make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02"))
         frame[4] ^= 0xFF
         assert is_frame_checksum_valid(bytes(frame)) is False
 
 
 class TestIsMessageChecksumValid:
     def test_valid_standard_message(self) -> None:
-        frame = _make_standard_frame(0xFF, MessageID.MTDATA2, b"\x10\x20")
+        frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x10\x20")
         message = _parse_standard_message(frame)
         assert is_message_checksum_valid(message) is True
 
     def test_valid_extended_message(self) -> None:
-        frame = _make_extended_frame(0xFF, MessageID.MTDATA2, b"\xab" * 300)
+        frame = _make_extended_frame(0xFF, XbusMessageID.MTDATA2, b"\xab" * 300)
         message = _parse_extended_message(frame)
         assert is_message_checksum_valid(message) is True
 
     def test_invalid_when_checksum_field_is_wrong(self) -> None:
-        frame = _make_standard_frame(0xFF, MessageID.MTDATA2, b"\x01")
+        frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01")
         message = _parse_standard_message(frame)
         tampered = XbusMessage(
             header=message.header,
@@ -100,7 +100,7 @@ class TestIsMessageChecksumValid:
         assert is_message_checksum_valid(tampered) is False
 
     def test_invalid_when_payload_byte_is_corrupted(self) -> None:
-        frame = _make_standard_frame(0xFF, MessageID.MTDATA2, b"\x01\x02")
+        frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02")
         message = _parse_standard_message(frame)
         tampered = XbusMessage(
             header=message.header,
@@ -113,7 +113,7 @@ class TestIsMessageChecksumValid:
         header = XbusMessageHeader(
             preamble=XbusFraming.PREAMBLE,
             bid=0xFF,
-            mid=MessageID.MTDATA2,
+            mid=XbusMessageID.MTDATA2,
             length=XbusFraming.EXTLEN,
             ext_length=None,
         )

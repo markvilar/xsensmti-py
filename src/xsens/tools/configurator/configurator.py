@@ -7,7 +7,7 @@ from __future__ import annotations
 import serial
 from loguru import logger
 
-from xsens.xbus.datatypes import MessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessageID, XbusMessage
 
 from ..serial_io import open_serial_port, send_and_receive
 from .presets import OutputPreset, build_output_configuration_payload
@@ -35,15 +35,15 @@ def configure_device(
         logger.info(f"Entering configuration mode on {port}...")
         send_and_receive(
             ser,
-            MessageID.GOTOCONFIG,
-            expected_mid=MessageID.GOTOCONFIG_ACK,
+            XbusMessageID.GOTOCONFIG,
+            expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=timeout,
         )
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
-            MessageID.REQ_DEVICE_ID,
-            expected_mid=MessageID.DEVICE_ID,
+            XbusMessageID.REQ_DEVICE_ID,
+            expected_mid=XbusMessageID.DEVICE_ID,
             timeout=timeout,
         )
         device_id: int = int.from_bytes(device_id_msg.payload, "big")
@@ -53,17 +53,17 @@ def configure_device(
         logger.info(f"Applying output configuration ({len(preset)} outputs)...")
         send_and_receive(
             ser,
-            MessageID.OUTPUT_CONFIGURATION,
+            XbusMessageID.OUTPUT_CONFIGURATION,
             payload=payload,
-            expected_mid=MessageID.OUTPUT_CONFIGURATION_ACK,
+            expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=timeout,
         )
 
         logger.info("Entering measurement mode...")
         send_and_receive(
             ser,
-            MessageID.GOTOMEASUREMENT,
-            expected_mid=MessageID.GOTOMEASUREMENT_ACK,
+            XbusMessageID.GOTOMEASUREMENT,
+            expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
             timeout=timeout,
         )
 

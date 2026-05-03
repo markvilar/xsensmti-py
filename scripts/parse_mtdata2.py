@@ -8,7 +8,7 @@ import click
 
 from loguru import logger
 
-from xsens.xbus import MessageID
+from xsens.xbus import XbusMessageID
 from xsens.xbus import XbusMessage
 from xsens.xbus import decode_xbus_messages_from_buffer
 from xsens.mtdata2 import OutputDataPacket
@@ -27,7 +27,7 @@ def main(input_path: Path) -> None:
     logger.info(f"Decoded {len(messages)} Xbus messages")
 
     mtdata2_messages: list[XbusMessage] = [
-        m for m in messages if m.header.mid == MessageID.MTDATA2
+        m for m in messages if m.header.mid == XbusMessageID.MTDATA2
     ]
     logger.info(f"MTData2 messages: {len(mtdata2_messages)}")
 

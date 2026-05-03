@@ -4,7 +4,7 @@ Exceptions raised by xsens.tools operations.
 
 from __future__ import annotations
 
-from xsens.xbus.datatypes import MessageID
+from xsens.xbus.datatypes import XbusMessageID
 
 
 class XsensToolsError(Exception):
@@ -18,7 +18,9 @@ class DeviceNotFound(XsensToolsError):
 class CommandTimeout(XsensToolsError):
     """Raised when the device does not respond within the timeout period."""
 
-    def __init__(self, port: str, mid_sent: MessageID | int, timeout: float) -> None:
+    def __init__(
+        self, port: str, mid_sent: XbusMessageID | int, timeout: float
+    ) -> None:
         self.port = port
         self.mid_sent = mid_sent
         self.timeout = timeout
@@ -32,8 +34,8 @@ class UnexpectedResponse(XsensToolsError):
 
     def __init__(
         self,
-        expected: MessageID,
-        received: MessageID,
+        expected: XbusMessageID,
+        received: XbusMessageID,
     ) -> None:
         self.expected = expected
         self.received = received
@@ -43,7 +45,7 @@ class UnexpectedResponse(XsensToolsError):
 class ConfigurationError(XsensToolsError):
     """Raised when the device rejects or NAKs a configuration command."""
 
-    def __init__(self, mid: MessageID | int, detail: str) -> None:
+    def __init__(self, mid: XbusMessageID | int, detail: str) -> None:
         self.mid = mid
         self.detail = detail
         super().__init__(f"configuration failed for MID {int(mid):#04x}: {detail}")

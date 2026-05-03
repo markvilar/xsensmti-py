@@ -13,11 +13,11 @@ import serial.tools.list_ports
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 
-from xsens.xbus.datatypes import MessageID, XbusMessage
+from xsens.xbus.datatypes import XbusMessageID, XbusMessage
 from xsens.xbus.decode import iter_xbus_messages_from_buffer
 from xsens.xbus.exceptions import (
     IncompletePayload,
-    InvalidMessageID,
+    InvalidXbusMessageID,
     InvalidPayloadLength,
     MissingChecksum,
     MissingHeader,
@@ -43,8 +43,8 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
     try:
         send_and_receive(
             ser,
-            MessageID.GOTOCONFIG,
-            expected_mid=MessageID.GOTOCONFIG_ACK,
+            XbusMessageID.GOTOCONFIG,
+            expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=timeout,
         )
         return
@@ -52,14 +52,14 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
         logger.debug(f"{ser.port}: GOTOCONFIG timed out — sending RESET and retrying")
 
     ser.reset_input_buffer()
-    send_message(ser, MessageID.RESET)
+    send_message(ser, XbusMessageID.RESET)
     ser.flush()
 
     buf: bytearray = bytearray()
     deadline: float = time.monotonic() + _RECOVERY_TIMEOUT
 
     while time.monotonic() < deadline:
-        send_message(ser, MessageID.GOTOCONFIG)
+        send_message(ser, XbusMessageID.GOTOCONFIG)
         ser.flush()
 
         chunk_end: float = time.monotonic() + _RECOVERY_INTERVAL
@@ -71,15 +71,15 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
         try:
             for msg in iter_xbus_messages_from_buffer(buf):
                 try:
-                    mid: MessageID = MessageID(msg.header.mid)
+                    mid: XbusMessageID = XbusMessageID(msg.header.mid)
                 except ValueError:
                     continue
-                if mid == MessageID.GOTOCONFIG_ACK:
+                if mid == XbusMessageID.GOTOCONFIG_ACK:
                     logger.debug(f"{ser.port}: GOTOCONFIG_ACK received after RESET")
                     return
         except (
             IncompletePayload,
-            InvalidMessageID,
+            InvalidXbusMessageID,
             InvalidPayloadLength,
             MissingChecksum,
             MissingHeader,
@@ -88,7 +88,7 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
 
     raise CommandTimeout(
         port=ser.port or "",
-        mid_sent=MessageID.GOTOCONFIG,
+        mid_sent=XbusMessageID.GOTOCONFIG,
         timeout=timeout + _RECOVERY_TIMEOUT,
     )
 
@@ -130,8 +130,8 @@ def scan_ports(
 
             device_id_msg: XbusMessage = send_and_receive(
                 ser,
-                MessageID.REQ_DEVICE_ID,
-                expected_mid=MessageID.DEVICE_ID,
+                XbusMessageID.REQ_DEVICE_ID,
+                expected_mid=XbusMessageID.DEVICE_ID,
                 timeout=timeout,
             )
             device_id: int = int.from_bytes(device_id_msg.payload, "big")
@@ -140,8 +140,8 @@ def scan_ports(
             try:
                 product_code_msg: XbusMessage = send_and_receive(
                     ser,
-                    MessageID.REQ_PRODUCT_CODE,
-                    expected_mid=MessageID.PRODUCT_CODE,
+                    XbusMessageID.REQ_PRODUCT_CODE,
+                    expected_mid=XbusMessageID.PRODUCT_CODE,
                     timeout=timeout,
                 )
                 product_code = product_code_msg.payload.rstrip(b"\x00").decode(

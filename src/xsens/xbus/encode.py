@@ -4,11 +4,11 @@ Encoder for Xbus frames — the write-path counterpart to decode.py.
 
 from __future__ import annotations
 
-from .datatypes import MessageID, PayloadLength, XbusFraming
+from .datatypes import XbusMessageID, PayloadLength, XbusFraming
 
 
 def encode_xbus_message(
-    mid: MessageID | int,
+    mid: XbusMessageID | int,
     payload: bytes = b"",
     bid: int = 0xFF,
 ) -> bytes:

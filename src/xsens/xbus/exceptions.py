@@ -39,8 +39,8 @@ class InvalidChecksum(Exception):
     pass
 
 
-class InvalidMessageID(Exception):
-    """Raised when the MID byte does not correspond to a known MessageID."""
+class InvalidXbusMessageID(Exception):
+    """Raised when the MID byte does not correspond to a known XbusMessageID."""
 
     def __init__(self, mid: int) -> None:
         self.mid = mid
