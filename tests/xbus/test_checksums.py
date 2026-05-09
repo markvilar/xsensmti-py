@@ -73,7 +73,9 @@ class TestIsFrameChecksumValid:
         assert is_frame_checksum_valid(bytes(frame)) is False
 
     def test_invalid_when_payload_byte_is_corrupted(self) -> None:
-        frame = bytearray(_make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02"))
+        frame = bytearray(
+            _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02")
+        )
         frame[4] ^= 0xFF
         assert is_frame_checksum_valid(bytes(frame)) is False
 

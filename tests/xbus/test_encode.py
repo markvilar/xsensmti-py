@@ -16,7 +16,9 @@ from xsensmti.xbus.encode import encode_xbus_message
 
 class TestEncodeKnownFrames:
     def test_gotoconfig(self) -> None:
-        assert encode_xbus_message(XbusMessageID.GOTOCONFIG) == bytes.fromhex("faff3000d1")
+        assert encode_xbus_message(XbusMessageID.GOTOCONFIG) == bytes.fromhex(
+            "faff3000d1"
+        )
 
     def test_req_device_id(self) -> None:
         assert encode_xbus_message(XbusMessageID.REQ_DEVICE_ID) == bytes.fromhex(

@@ -86,7 +86,9 @@ class TestBuildOutputConfigurationPayload:
         for name in PRESET_NAMES:
             preset = get_preset(name)
             payload = build_output_configuration_payload(preset)
-            frame = encode_xbus_message(XbusMessageID.OUTPUT_CONFIGURATION, payload=payload)
+            frame = encode_xbus_message(
+                XbusMessageID.OUTPUT_CONFIGURATION, payload=payload
+            )
             assert is_frame_checksum_valid(
                 frame
             ), f"invalid checksum for preset '{name}'"
