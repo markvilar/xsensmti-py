@@ -19,9 +19,9 @@ from .configurator.presets import (
 
 from .configurator import configure_device as configure_device
 
+from xsensmti.port import MtiPortInfo as MtiPortInfo
 from .scanner import (
     ScanOptions as ScanOptions,
-    ScanResult as ScanResult,
     scan_port as scan_port,
     scan_ports as scan_ports,
 )
