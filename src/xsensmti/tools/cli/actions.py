@@ -18,19 +18,21 @@ from ..exceptions import (
     XsensToolsError,
 )
 from ..recorder import RecordingResult, record_device
-from ..scanner import ScanResult, scan_ports
+from xsensmti.port import MtiPortInfo
+from ..scanner import scan_ports
 
 
 def dispatch_scan_devices(baud: int, timeout: float, usb_only: bool) -> None:
     """Call the scanner and echo found MTi devices to stdout."""
-    results: list[ScanResult] = scan_ports(
+    results: list[MtiPortInfo] = scan_ports(
         baud=baud, timeout=timeout, usb_only=usb_only
     )
 
     for result in results:
         label: str = f"  product={result.product_code}" if result.product_code else ""
+        usb: str = f"  {result.usb_info}" if result.usb_info is not None else ""
         click.echo(
-            f"{result.port}  device_id={result.device_id:#010x}  baud={result.baud}{label}"
+            f"{result.port}  device_id={result.device_id:#010x}  baud={result.baud}{label}{usb}"
         )
 
     if not results:

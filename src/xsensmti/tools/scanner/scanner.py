@@ -10,6 +10,7 @@ import serial.tools.list_ports
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
@@ -21,6 +22,7 @@ from xsensmti.xbus.exceptions import (
     MissingChecksum,
     MissingHeader,
 )
+from xsensmti.port import MtiPortInfo
 from ..exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
 from ..serial_io import open_serial_port, send_and_receive, send_message
 
@@ -28,7 +30,7 @@ _RECOVERY_TIMEOUT: float = 5.0
 _RECOVERY_INTERVAL: float = 0.1
 
 
-def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
+def _goto_config_mode(ser: serial.Serial, timeout: float) -> None:
     """
     Put the device in config mode, with a RESET fallback for devices that are
     stuck in a bad persistent state and ignore GOTOCONFIG while streaming.
@@ -36,7 +38,7 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
     Normal path: send GOTOCONFIG, wait up to `timeout` seconds for ACK.
     Fallback: send RESET, then retry GOTOCONFIG every 100 ms for up to
     _RECOVERY_TIMEOUT seconds.  Devices typically become responsive ~1.7 s
-    after RESET (see docs/debug/mti_gotoconfig_not_responding.md).
+    after RESET (see docs/debug/mti_goto_config_mode_not_responding.md).
     """
     try:
         send_and_receive(
@@ -92,16 +94,6 @@ def _gotoconfig(ser: serial.Serial, timeout: float) -> None:
 
 
 @dataclass(frozen=True)
-class ScanResult:
-    """A single MTi device found during a port scan."""
-
-    port: str
-    device_id: int
-    baud: int
-    product_code: str
-
-
-@dataclass(frozen=True)
 class ScanOptions:
     """Parameters controlling how a port scan is performed."""
 
@@ -109,7 +101,12 @@ class ScanOptions:
     timeout: float = 2.0
 
 
-def scan_port(port: str, options: ScanOptions | None = None) -> ScanResult | None:
+def scan_port(
+    port: str,
+    options: ScanOptions | None = None,
+    vid: int | None = None,
+    pid: int | None = None,
+) -> MtiPortInfo | None:
     """
     Probe a single serial port and return a ScanResult if an MTi device is found.
 
@@ -122,7 +119,7 @@ def scan_port(port: str, options: ScanOptions | None = None) -> ScanResult | Non
         ser = open_serial_port(port, opts.baud, read_timeout=0.1)
         ser.reset_input_buffer()
 
-        _gotoconfig(ser, opts.timeout)
+        _goto_config_mode(ser, opts.timeout)
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
@@ -146,11 +143,13 @@ def scan_port(port: str, options: ScanOptions | None = None) -> ScanResult | Non
         except (CommandTimeout, UnexpectedResponse):
             pass
 
-        return ScanResult(
+        return MtiPortInfo(
             port=port,
-            device_id=device_id,
             baud=opts.baud,
+            device_id=device_id,
             product_code=product_code,
+            vid=vid,
+            pid=pid,
         )
 
     except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
@@ -168,7 +167,7 @@ def scan_ports(
     baud: int = 115200,
     timeout: float = 2.0,
     usb_only: bool = False,
-) -> list[ScanResult]:
+) -> list[MtiPortInfo]:
     """
     Probe all available serial ports and return found MTi devices.
     """
@@ -179,9 +178,14 @@ def scan_ports(
 
     opts: ScanOptions = ScanOptions(baud=baud, timeout=timeout)
 
-    results: list[ScanResult] = []
+    results: list[MtiPortInfo] = []
     for port_info in ports:
-        result: ScanResult | None = scan_port(port_info.device, opts)
+        result: MtiPortInfo | None = scan_port(
+            port_info.device,
+            opts,
+            vid=port_info.vid,
+            pid=port_info.pid,
+        )
         if result is not None:
             results.append(result)
 
