@@ -11,11 +11,11 @@ import click
 from pathlib import Path
 from ..configurator import configure_device
 from ..configurator.presets import OutputPreset, get_preset
-from ..exceptions import (
+from xsensmti.exceptions import (
     CommandTimeout,
     ConfigurationError,
     UnexpectedResponse,
-    XsensToolsError,
+    XsensError,
 )
 from ..recorder import RecordingResult, record_device
 from xsensmti.port import MtiPortInfo
@@ -62,7 +62,7 @@ def dispatch_configure_device(
         CommandTimeout,
         UnexpectedResponse,
         ConfigurationError,
-        XsensToolsError,
+        XsensError,
     ) as exc:
         click.echo(f"Error: {exc}", err=True)
         raise SystemExit(1)
@@ -105,7 +105,7 @@ def dispatch_record_device(
             f"Recorded {result.bytes_recorded} bytes in {result.duration:.1f}s"
             f" ({rate:.0f} B/s) → {result.output_path}"
         )
-    except (CommandTimeout, UnexpectedResponse, XsensToolsError) as exc:
+    except (CommandTimeout, UnexpectedResponse, XsensError) as exc:
         click.echo(f"Error: {exc}", err=True)
         raise SystemExit(1)
     except OSError as exc:

@@ -4,7 +4,6 @@ Scanner for connected XSens MTi devices.
 
 from __future__ import annotations
 
-import time
 import serial
 import serial.tools.list_ports
 
@@ -14,83 +13,9 @@ from dataclasses import dataclass
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
-from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
-from xsensmti.xbus.exceptions import (
-    IncompletePayload,
-    InvalidPayloadLength,
-    InvalidXbusMessageID,
-    MissingChecksum,
-    MissingHeader,
-)
 from xsensmti.port import MtiPortInfo
-from ..exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
-from ..serial_io import open_serial_port, send_and_receive, send_message
-
-_RECOVERY_TIMEOUT: float = 5.0
-_RECOVERY_INTERVAL: float = 0.1
-
-
-def _goto_config_mode(ser: serial.Serial, timeout: float) -> None:
-    """
-    Put the device in config mode, with a RESET fallback for devices that are
-    stuck in a bad persistent state and ignore GOTOCONFIG while streaming.
-
-    Normal path: send GOTOCONFIG, wait up to `timeout` seconds for ACK.
-    Fallback: send RESET, then retry GOTOCONFIG every 100 ms for up to
-    _RECOVERY_TIMEOUT seconds.  Devices typically become responsive ~1.7 s
-    after RESET (see docs/debug/mti_goto_config_mode_not_responding.md).
-    """
-    try:
-        send_and_receive(
-            ser,
-            XbusMessageID.GOTOCONFIG,
-            expected_mid=XbusMessageID.GOTOCONFIG_ACK,
-            timeout=timeout,
-        )
-        return
-    except CommandTimeout:
-        logger.debug(f"{ser.port}: GOTOCONFIG timed out — sending RESET and retrying")
-
-    ser.reset_input_buffer()
-    send_message(ser, XbusMessageID.RESET)
-    ser.flush()
-
-    buf: bytearray = bytearray()
-    deadline: float = time.monotonic() + _RECOVERY_TIMEOUT
-
-    while time.monotonic() < deadline:
-        send_message(ser, XbusMessageID.GOTOCONFIG)
-        ser.flush()
-
-        chunk_end: float = time.monotonic() + _RECOVERY_INTERVAL
-        while time.monotonic() < chunk_end:
-            chunk: bytes = ser.read(256)
-            if chunk:
-                buf.extend(chunk)
-
-        try:
-            for msg in iter_xbus_messages_from_buffer(buf):
-                try:
-                    mid: XbusMessageID = XbusMessageID(msg.header.mid)
-                except ValueError:
-                    continue
-                if mid == XbusMessageID.GOTOCONFIG_ACK:
-                    logger.debug(f"{ser.port}: GOTOCONFIG_ACK received after RESET")
-                    return
-        except (
-            IncompletePayload,
-            InvalidXbusMessageID,
-            InvalidPayloadLength,
-            MissingChecksum,
-            MissingHeader,
-        ):
-            pass
-
-    raise CommandTimeout(
-        port=ser.port or "",
-        mid_sent=XbusMessageID.GOTOCONFIG,
-        timeout=timeout + _RECOVERY_TIMEOUT,
-    )
+from xsensmti.serial import goto_config_mode, open_serial_port, send_and_receive
+from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
 
 
 @dataclass(frozen=True)
@@ -119,7 +44,7 @@ def scan_port(
         ser = open_serial_port(port, opts.baud, read_timeout=0.1)
         ser.reset_input_buffer()
 
-        _goto_config_mode(ser, opts.timeout)
+        goto_config_mode(ser, opts.timeout)
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
