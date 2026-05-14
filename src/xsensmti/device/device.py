@@ -193,6 +193,11 @@ class MtiDevice:
     def send_raw_message(self, data: bytes) -> None:
         self._ser.write(data)
 
+    def close(self) -> None:
+        if self.is_measuring():
+            self.goto_config()
+        self._ser.close()
+
     def reopen_port(self) -> None:
         self._stop_reader()
         self._ser.close()
