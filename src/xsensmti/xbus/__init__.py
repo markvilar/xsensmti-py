@@ -7,6 +7,7 @@ from .decode import (
     is_message_checksum_valid as is_message_checksum_valid,
     iter_xbus_messages_from_buffer as iter_xbus_messages_from_buffer,
     decode_xbus_messages_from_buffer as decode_xbus_messages_from_buffer,
+    drain_xbus_messages as drain_xbus_messages,
 )
 
 from .datatypes import XbusMessageID as XbusMessageID

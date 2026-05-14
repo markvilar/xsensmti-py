@@ -10,13 +10,16 @@ from collections import deque
 import serial
 from loguru import logger
 
-from xsensmti.mtdata2.datatypes import OutputDataIdentifier
+from xsensmti.mtdata2 import OutputDataIdentifier
 from xsensmti.port import MtiPortInfo
-from xsensmti.serial.serial_io import send_and_receive
-from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
-from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
+from xsensmti.serial import send_and_receive
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+    drain_xbus_messages,
+)
 
-from .datatypes import DeviceState
+from .datatypes import MtiDeviceState
 
 type OutputConfig = list[tuple[OutputDataIdentifier, int]]
 
@@ -36,7 +39,7 @@ class MtiDevice:
         self._hardware_version: str = hardware_version
         self._ser: serial.Serial = ser
         self._timeout: float = timeout
-        self._state: DeviceState = DeviceState.CONFIG
+        self._state: MtiDeviceState = MtiDeviceState.CONFIG
         self._buffer: deque[XbusMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
         self._stop_event: threading.Event = threading.Event()
@@ -67,11 +70,11 @@ class MtiDevice:
 
     # --- State ---
 
-    def device_state(self) -> DeviceState:
+    def device_state(self) -> MtiDeviceState:
         return self._state
 
     def is_measuring(self) -> bool:
-        return self._state == DeviceState.MEASUREMENT
+        return self._state == MtiDeviceState.MEASUREMENT
 
     def goto_config(self) -> None:
         self._stop_reader()
@@ -81,7 +84,7 @@ class MtiDevice:
             expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=self._timeout,
         )
-        self._state = DeviceState.CONFIG
+        self._state = MtiDeviceState.CONFIG
         logger.debug(f"{self._port_info.port}: entered config mode")
 
     def goto_measurement(self) -> None:
@@ -91,7 +94,7 @@ class MtiDevice:
             expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
             timeout=self._timeout,
         )
-        self._state = DeviceState.MEASUREMENT
+        self._state = MtiDeviceState.MEASUREMENT
         self._start_reader()
         logger.debug(f"{self._port_info.port}: entered measurement mode")
 
@@ -103,7 +106,7 @@ class MtiDevice:
             expected_mid=XbusMessageID.RESET_ACK,
             timeout=self._timeout,
         )
-        self._state = DeviceState.CONFIG
+        self._state = MtiDeviceState.CONFIG
 
     def restore_factory_defaults(self) -> None:
         self._stop_reader()
@@ -113,7 +116,7 @@ class MtiDevice:
             expected_mid=XbusMessageID.RESTORE_FACTORY_DEFAULTS_ACK,
             timeout=self._timeout,
         )
-        self._state = DeviceState.CONFIG
+        self._state = MtiDeviceState.CONFIG
 
     # --- Output configuration ---
 
@@ -194,7 +197,7 @@ class MtiDevice:
         self._stop_reader()
         self._ser.close()
         self._ser.open()
-        self._state = DeviceState.CONFIG
+        self._state = MtiDeviceState.CONFIG
 
     # --- Internal ---
 
@@ -222,20 +225,14 @@ class MtiDevice:
                 chunk: bytes = self._ser.read(256)
             except serial.SerialException as exc:
                 logger.error(f"{self._port_info.port}: serial error in reader: {exc}")
-                self._state = DeviceState.CONFIG
+                self._state = MtiDeviceState.CONFIG
                 self._stop_event.set()
                 break
 
             if chunk:
                 accumulator.extend(chunk)
 
-            for msg in iter_xbus_messages_from_buffer(accumulator):
-                try:
-                    mid: XbusMessageID = XbusMessageID(msg.header.mid)
-                except ValueError:
-                    continue
-                if mid == XbusMessageID.MTDATA2:
+            for message in drain_xbus_messages(accumulator):
+                if message.header.mid == XbusMessageID.MTDATA2:
                     with self._buffer_lock:
-                        self._buffer.append(msg)
-
-            accumulator.clear()
+                        self._buffer.append(message)
