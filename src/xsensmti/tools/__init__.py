@@ -2,8 +2,8 @@
 Public API for xsens.tools — CLI helpers for MTi sensor configuration.
 """
 
-from .exceptions import (
-    XsensToolsError as XsensToolsError,
+from xsensmti.exceptions import (
+    XsensError as XsensError,
     DeviceNotFound as DeviceNotFound,
     CommandTimeout as CommandTimeout,
     UnexpectedResponse as UnexpectedResponse,

@@ -10,7 +10,7 @@ def test_can_import_xsens_tools() -> None:
 
 
 def test_can_import_cli_without_side_effects() -> None:
-    from xsensmti.tools.cli.commands import main
+    from xsensmti.tools.cli import main
 
     assert callable(main)
 
@@ -21,13 +21,13 @@ def test_can_import_exceptions() -> None:
         ConfigurationError,
         DeviceNotFound,
         UnexpectedResponse,
-        XsensToolsError,
+        XsensError,
     )
 
-    assert issubclass(DeviceNotFound, XsensToolsError)
-    assert issubclass(CommandTimeout, XsensToolsError)
-    assert issubclass(UnexpectedResponse, XsensToolsError)
-    assert issubclass(ConfigurationError, XsensToolsError)
+    assert issubclass(DeviceNotFound, XsensError)
+    assert issubclass(CommandTimeout, XsensError)
+    assert issubclass(UnexpectedResponse, XsensError)
+    assert issubclass(ConfigurationError, XsensError)
 
 
 def test_can_import_presets() -> None:

@@ -7,11 +7,13 @@ from __future__ import annotations
 import struct
 import pytest
 
-from xsensmti.mtdata2.datatypes import OutputDataIdentifier
-from xsensmti.xbus.decode import is_frame_checksum_valid
-from xsensmti.xbus.encode import encode_xbus_message
-from xsensmti.xbus.datatypes import XbusMessageID
-from xsensmti.tools.configurator.presets import (
+from xsensmti.mtdata2 import OutputDataIdentifier
+from xsensmti.xbus import (
+    XbusMessageID,
+    encode_xbus_message,
+    is_frame_checksum_valid,
+)
+from xsensmti.tools.configurator import (
     PRESET_NAMES,
     VALID_RATES,
     build_output_configuration_payload,

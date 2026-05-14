@@ -8,18 +8,18 @@ import time
 
 import serial
 
-from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
-from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
-from xsensmti.xbus.encode import encode_xbus_message
-from xsensmti.xbus.exceptions import (
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+    encode_xbus_message,
+    iter_xbus_messages_from_buffer,
     IncompletePayload,
-    InvalidXbusMessageID,
     InvalidPayloadLength,
+    InvalidXbusMessageID,
     MissingChecksum,
     MissingHeader,
 )
-
-from .exceptions import CommandTimeout, UnexpectedResponse
+from xsensmti.exceptions import CommandTimeout, UnexpectedResponse
 
 
 def open_serial_port(
@@ -99,7 +99,6 @@ def receive_message(
             MissingHeader,
             MissingChecksum,
         ):
-            # Partial or unparseable frame — wait for more bytes.
             pass
 
     raise CommandTimeout(port=port, mid_sent=expected_mid, timeout=timeout)

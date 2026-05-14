@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import struct
 
-from xsensmti.mtdata2.datatypes import OutputDataIdentifier
+from xsensmti.mtdata2 import OutputDataIdentifier
 
 type XdiRatePair = tuple[OutputDataIdentifier, int]
 type OutputPreset = tuple[XdiRatePair, ...]

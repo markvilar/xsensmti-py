@@ -64,7 +64,7 @@ def decode_xbus_messages_from_buffer(buffer: bytes | bytearray) -> list[XbusMess
 
 def iter_xbus_messages_from_buffer(buffer: bytes | bytearray) -> Iterator[XbusMessage]:
     """
-    Yield Xbus messages parsed from a buffer.
+    Yield Xbus messages parsed from a buffer without modifying it.
     """
     remaining: bytearray = bytearray(buffer)
 
@@ -80,24 +80,74 @@ def iter_xbus_messages_from_buffer(buffer: bytes | bytearray) -> Iterator[XbusMe
         if len(remaining) < 4:
             break
 
-        # Parse header prefix, i.e. header without accounting for extended length
         prefix: XbusMessageHeaderPrefix = _parse_message_header_prefix(remaining)
-
-        # Parse header based on type from header prefix
         header: XbusMessageHeader = _parse_message_header_from_prefix(prefix, remaining)
-
-        # Select frame from the buffer
         frame: bytes = bytes(remaining[: header.frame_length])
-
-        # Parse message from header and frame
         message: XbusMessage = _parse_message_from_header_and_frame(header, frame)
 
-        # Validate message checksum
         if is_message_checksum_valid(message):
             yield message
             del remaining[: message.header.frame_length]
         else:
             del remaining[0]
+
+
+def drain_xbus_messages(buffer: bytearray) -> list[XbusMessage]:
+    """
+    Parse all complete Xbus messages from buffer, removing consumed bytes in-place.
+
+    Advances an offset over the buffer to avoid intermediate deletions, then
+    trims the buffer once at the end. Any incomplete frame at the tail is
+    preserved so the caller can append more data and call again.
+
+    Parse errors (unknown MID, corrupt frames) are skipped silently.
+    """
+    messages: list[XbusMessage] = []
+    offset: int = 0
+
+    while True:
+        preamble_position: int = buffer.find(XbusFraming.PREAMBLE, offset)
+        if preamble_position == -1:
+            offset = len(buffer)
+            break
+
+        offset = preamble_position
+
+        if len(buffer) - offset < 4:
+            break
+
+        try:
+            prefix: XbusMessageHeaderPrefix = _parse_message_header_prefix(
+                buffer[offset:]
+            )
+            header: XbusMessageHeader = _parse_message_header_from_prefix(
+                prefix, buffer[offset:]
+            )
+        except InvalidXbusMessageID:
+            offset += 1
+            continue
+        except InvalidPayloadLength:
+            break  # incomplete extended header, wait for more data
+
+        if len(buffer) - offset < header.frame_length:
+            break  # incomplete frame, wait for more data
+
+        frame: bytes = bytes(buffer[offset : offset + header.frame_length])
+
+        try:
+            message: XbusMessage = _parse_message_from_header_and_frame(header, frame)
+        except (InvalidPayloadLength, MissingChecksum):
+            offset += 1
+            continue
+
+        if is_message_checksum_valid(message):
+            messages.append(message)
+            offset += header.frame_length
+        else:
+            offset += 1
+
+    del buffer[:offset]
+    return messages
 
 
 def _parse_message_header_prefix(buffer: bytes | bytearray) -> XbusMessageHeaderPrefix:
@@ -119,7 +169,8 @@ def _parse_message_header_prefix(buffer: bytes | bytearray) -> XbusMessageHeader
 
 
 def _parse_message_header_from_prefix(
-    prefix: XbusMessageHeaderPrefix, buffer: bytes | bytearray
+    prefix: XbusMessageHeaderPrefix,
+    buffer: bytes | bytearray,
 ) -> XbusMessageHeader:
     """
     Resolve a full message header from a prefix and buffer, dispatching on standard vs. extended framing.
@@ -173,7 +224,8 @@ def _parse_message_header_extended(buffer: bytes | bytearray) -> XbusMessageHead
 
 
 def _parse_message_from_header_and_frame(
-    header: XbusMessageHeader, frame: bytes
+    header: XbusMessageHeader,
+    frame: bytes,
 ) -> XbusMessage:
     """
     Parse an Xbus message from a resolved header and complete frame.

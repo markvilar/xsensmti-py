@@ -1,21 +1,21 @@
 """
-Exceptions raised by xsens.tools operations.
+Domain exceptions for the xsensmti library.
 """
 
 from __future__ import annotations
 
-from xsensmti.xbus.datatypes import XbusMessageID
+from xsensmti.xbus import XbusMessageID
 
 
-class XsensToolsError(Exception):
-    """Base class for all xsens.tools errors."""
+class XsensError(Exception):
+    """Base class for all xsensmti errors."""
 
 
-class DeviceNotFound(XsensToolsError):
+class DeviceNotFound(XsensError):
     """Raised when no MTi device responds on the given port."""
 
 
-class CommandTimeout(XsensToolsError):
+class CommandTimeout(XsensError):
     """Raised when the device does not respond within the timeout period."""
 
     def __init__(
@@ -29,7 +29,7 @@ class CommandTimeout(XsensToolsError):
         )
 
 
-class UnexpectedResponse(XsensToolsError):
+class UnexpectedResponse(XsensError):
     """Raised when the device responds with a MID other than the expected ACK."""
 
     def __init__(
@@ -42,7 +42,7 @@ class UnexpectedResponse(XsensToolsError):
         super().__init__(f"expected MID {int(expected):#04x}, got {int(received):#04x}")
 
 
-class ConfigurationError(XsensToolsError):
+class ConfigurationError(XsensError):
     """Raised when the device rejects or NAKs a configuration command."""
 
     def __init__(self, mid: XbusMessageID | int, detail: str) -> None:
