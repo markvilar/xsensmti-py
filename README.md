@@ -1,6 +1,6 @@
-# XSens-MTi Python Library
+# XSens MTi Python Library
 
-![ci](https://github.com/markvilar/xsens-py/actions/workflows/ubuntu.yml/badge.svg)
+![ci](https://github.com/markvilar/xsensmti-py/actions/workflows/ubuntu.yml/badge.svg)
 
 
 ### Getting started
