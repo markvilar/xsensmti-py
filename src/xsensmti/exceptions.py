@@ -4,7 +4,7 @@ Domain exceptions for the xsensmti library.
 
 from __future__ import annotations
 
-from xsensmti.xbus.datatypes import XbusMessageID
+from xsensmti.xbus import XbusMessageID
 
 
 class XsensError(Exception):

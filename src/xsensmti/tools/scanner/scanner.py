@@ -12,7 +12,10 @@ from dataclasses import dataclass
 
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
-from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+)
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import goto_config_mode, open_serial_port, send_and_receive
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse

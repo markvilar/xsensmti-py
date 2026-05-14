@@ -6,13 +6,15 @@ from __future__ import annotations
 
 import pytest
 
-from xsensmti.xbus.datatypes import XbusMessageID
-from xsensmti.xbus.datatypes import XbusFraming
-from xsensmti.xbus.datatypes import XbusMessageHeader
-from xsensmti.xbus.datatypes import XbusMessage
-from xsensmti.xbus.decode import is_frame_checksum_valid
-from xsensmti.xbus.decode import is_message_checksum_valid
-from xsensmti.xbus.exceptions import InvalidPayloadLength
+from xsensmti.xbus import (
+    XbusMessageID,
+    XbusFraming,
+    XbusMessageHeader,
+    XbusMessage,
+    is_frame_checksum_valid,
+    is_message_checksum_valid,
+    InvalidPayloadLength,
+)
 
 
 def _make_standard_frame(bid: int, mid: int, payload: bytes) -> bytes:

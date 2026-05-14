@@ -10,7 +10,7 @@ def test_can_import_xsens_tools() -> None:
 
 
 def test_can_import_cli_without_side_effects() -> None:
-    from xsensmti.tools.cli.commands import main
+    from xsensmti.tools.cli import main
 
     assert callable(main)
 

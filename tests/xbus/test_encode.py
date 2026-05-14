@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import pytest
 
-from xsensmti.xbus.datatypes import XbusMessageID, PayloadLength
-from xsensmti.xbus.decode import (
+from xsensmti.xbus import (
+    XbusMessageID,
+    PayloadLength,
     decode_xbus_messages_from_buffer,
     is_frame_checksum_valid,
+    encode_xbus_message,
 )
-from xsensmti.xbus.encode import encode_xbus_message
 
 
 class TestEncodeKnownFrames:

@@ -10,7 +10,10 @@ import serial
 from dataclasses import dataclass
 from pathlib import Path
 from loguru import logger
-from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+)
 from xsensmti.serial import goto_config_mode, open_serial_port, send_and_receive
 
 

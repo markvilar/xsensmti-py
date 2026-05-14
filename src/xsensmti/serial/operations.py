@@ -10,9 +10,9 @@ import serial
 
 from loguru import logger
 
-from xsensmti.xbus.datatypes import XbusMessageID
-from xsensmti.xbus.decode import iter_xbus_messages_from_buffer
-from xsensmti.xbus.exceptions import (
+from xsensmti.xbus import (
+    XbusMessageID,
+    iter_xbus_messages_from_buffer,
     IncompletePayload,
     InvalidPayloadLength,
     InvalidXbusMessageID,

@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from xsensmti.xbus.datatypes import XbusMessageID
-from xsensmti.xbus.datatypes import XbusMessage
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+)
 
 from .datatypes import OutputDataIdentifier
 from .datatypes import OutputDataPacket
