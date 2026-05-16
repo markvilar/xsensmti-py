@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import struct
 
-from xsensmti.mtdata2 import OutputDataIdentifier
+from xsensmti.mtdata2 import MtData2PacketID
 
-type XdiRatePair = tuple[OutputDataIdentifier, int]
+type XdiRatePair = tuple[MtData2PacketID, int]
 type OutputPreset = tuple[XdiRatePair, ...]
 
 PRESET_NAMES: tuple[str, ...] = ("imu", "vru", "gnss")
@@ -17,36 +17,36 @@ VALID_RATES: frozenset[int] = frozenset({1, 2, 4, 5, 10, 20, 25, 50, 100, 200, 4
 
 _GNSS_PVT_MAX_RATE: int = 4
 
-_IMU_BASE: tuple[OutputDataIdentifier, ...] = (
-    OutputDataIdentifier.PACKET_COUNTER,
-    OutputDataIdentifier.SAMPLE_TIME_FINE,
-    OutputDataIdentifier.ACCELERATION,
-    OutputDataIdentifier.RATE_OF_TURN,
-    OutputDataIdentifier.MAGNETIC_FIELD,
-    OutputDataIdentifier.STATUS_WORD,
+_IMU_BASE: tuple[MtData2PacketID, ...] = (
+    MtData2PacketID.PACKET_COUNTER,
+    MtData2PacketID.SAMPLE_TIME_FINE,
+    MtData2PacketID.ACCELERATION,
+    MtData2PacketID.RATE_OF_TURN,
+    MtData2PacketID.MAGNETIC_FIELD,
+    MtData2PacketID.STATUS_WORD,
 )
 
-_VRU_BASE: tuple[OutputDataIdentifier, ...] = (
-    OutputDataIdentifier.PACKET_COUNTER,
-    OutputDataIdentifier.SAMPLE_TIME_FINE,
-    OutputDataIdentifier.ORIENTATION_QUATERNION,
-    OutputDataIdentifier.ACCELERATION,
-    OutputDataIdentifier.RATE_OF_TURN,
-    OutputDataIdentifier.MAGNETIC_FIELD,
-    OutputDataIdentifier.STATUS_WORD,
+_VRU_BASE: tuple[MtData2PacketID, ...] = (
+    MtData2PacketID.PACKET_COUNTER,
+    MtData2PacketID.SAMPLE_TIME_FINE,
+    MtData2PacketID.ORIENTATION_QUATERNION,
+    MtData2PacketID.ACCELERATION,
+    MtData2PacketID.RATE_OF_TURN,
+    MtData2PacketID.MAGNETIC_FIELD,
+    MtData2PacketID.STATUS_WORD,
 )
 
-_GNSS_BASE: tuple[OutputDataIdentifier, ...] = (
-    OutputDataIdentifier.PACKET_COUNTER,
-    OutputDataIdentifier.SAMPLE_TIME_FINE,
-    OutputDataIdentifier.ORIENTATION_QUATERNION,
-    OutputDataIdentifier.ACCELERATION,
-    OutputDataIdentifier.RATE_OF_TURN,
-    OutputDataIdentifier.VELOCITY_NED,
-    OutputDataIdentifier.POSITION_LL_ELLIPSOID,
-    OutputDataIdentifier.ALTITUDE_ELLIPSOID,
-    OutputDataIdentifier.GNSS_PVT,
-    OutputDataIdentifier.STATUS_WORD,
+_GNSS_BASE: tuple[MtData2PacketID, ...] = (
+    MtData2PacketID.PACKET_COUNTER,
+    MtData2PacketID.SAMPLE_TIME_FINE,
+    MtData2PacketID.ORIENTATION_QUATERNION,
+    MtData2PacketID.ACCELERATION,
+    MtData2PacketID.RATE_OF_TURN,
+    MtData2PacketID.VELOCITY_NED,
+    MtData2PacketID.POSITION_LL_ELLIPSOID,
+    MtData2PacketID.ALTITUDE_ELLIPSOID,
+    MtData2PacketID.GNSS_PVT,
+    MtData2PacketID.STATUS_WORD,
 )
 
 
@@ -62,7 +62,7 @@ def get_preset(name: str, rate: int = 100) -> OutputPreset:
             f"rate {rate} Hz is not supported; valid rates: {sorted(VALID_RATES)}"
         )
 
-    xdis: tuple[OutputDataIdentifier, ...]
+    xdis: tuple[MtData2PacketID, ...]
     match name:
         case "imu":
             xdis = _IMU_BASE
@@ -76,9 +76,7 @@ def get_preset(name: str, rate: int = 100) -> OutputPreset:
     return tuple(
         (
             xdi,
-            min(rate, _GNSS_PVT_MAX_RATE)
-            if xdi == OutputDataIdentifier.GNSS_PVT
-            else rate,
+            min(rate, _GNSS_PVT_MAX_RATE) if xdi == MtData2PacketID.GNSS_PVT else rate,
         )
         for xdi in xdis
     )
