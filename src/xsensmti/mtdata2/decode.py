@@ -41,12 +41,12 @@ def iter_mtdata2_packets_from_message(
 def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[MtData2Packet]:
     """
     Yield MTData2 packets from a raw payload buffer.
+
+    Packets whose XDI is not a known MtData2PacketID are silently skipped.
     """
     offset: int = 0
     while offset + 3 <= len(payload):
-        data_id: MtData2PacketID = MtData2PacketID(
-            int.from_bytes(payload[offset : offset + 2], byteorder="big")
-        )
+        packet_id: int = int.from_bytes(payload[offset : offset + 2], byteorder="big")
         length: int = payload[offset + 2]
         offset += 3
         if offset + length > len(payload):
@@ -55,5 +55,15 @@ def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[MtData2Packet]
                 f"but only {len(payload) - offset} remain"
             )
         data: bytes = payload[offset : offset + length]
-        yield MtData2Packet(data_id=data_id, length=length, data=data)
         offset += length
+
+        if packet_id in MtData2PacketID:
+            yield _parse_mtdata2_packet(packet_id, length, data)
+
+
+def _parse_mtdata2_packet(
+    packet_id: int,
+    length: int,
+    data: bytes,
+) -> MtData2Packet:
+    return MtData2Packet(data_id=MtData2PacketID(packet_id), length=length, data=data)
