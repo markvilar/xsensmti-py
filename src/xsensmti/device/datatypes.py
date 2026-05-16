@@ -7,9 +7,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 
-from xsensmti.mtdata2 import OutputDataIdentifier
+from xsensmti.mtdata2 import MtData2PacketID
 
-type MtiDeviceOutputConfig = list[tuple[OutputDataIdentifier, int]]
+type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
 class MtiDeviceState(IntEnum):

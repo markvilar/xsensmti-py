@@ -11,13 +11,14 @@ from xsensmti.xbus import (
     XbusMessageID,
 )
 
-from .datatypes import OutputDataIdentifier
-from .datatypes import OutputDataPacket
-from .exceptions import NotMTData2Message
+from xsensmti.exceptions import UnexpectedXbusMessage
+
+from .datatypes import MtData2Packet
+from .datatypes import MtData2PacketID
 from .exceptions import TruncatedPacket
 
 
-def decode_mtdata2_packets_from_message(message: XbusMessage) -> list[OutputDataPacket]:
+def decode_mtdata2_packets_from_message(message: XbusMessage) -> list[MtData2Packet]:
     """
     Decode all MTData2 packets from an MTDATA2 XbusMessage.
     """
@@ -26,24 +27,24 @@ def decode_mtdata2_packets_from_message(message: XbusMessage) -> list[OutputData
 
 def iter_mtdata2_packets_from_message(
     message: XbusMessage,
-) -> Iterator[OutputDataPacket]:
+) -> Iterator[MtData2Packet]:
     """
     Yield MTData2 packets parsed from an MTDATA2 XbusMessage payload.
     """
     if message.header.mid != XbusMessageID.MTDATA2:
-        raise NotMTData2Message(
+        raise UnexpectedXbusMessage(
             f"expected MID {XbusMessageID.MTDATA2:#x}, got {message.header.mid:#x}"
         )
     yield from iter_mtdata2_packets_from_payload(message.payload)
 
 
-def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[OutputDataPacket]:
+def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[MtData2Packet]:
     """
     Yield MTData2 packets from a raw payload buffer.
     """
     offset: int = 0
     while offset + 3 <= len(payload):
-        data_id: OutputDataIdentifier = OutputDataIdentifier(
+        data_id: MtData2PacketID = MtData2PacketID(
             int.from_bytes(payload[offset : offset + 2], byteorder="big")
         )
         length: int = payload[offset + 2]
@@ -54,5 +55,5 @@ def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[OutputDataPack
                 f"but only {len(payload) - offset} remain"
             )
         data: bytes = payload[offset : offset + length]
-        yield OutputDataPacket(data_id=data_id, length=length, data=data)
+        yield MtData2Packet(data_id=data_id, length=length, data=data)
         offset += length

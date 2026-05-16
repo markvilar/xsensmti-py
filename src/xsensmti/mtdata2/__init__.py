@@ -8,12 +8,12 @@ from .decode import (
     iter_mtdata2_packets_from_payload as iter_mtdata2_packets_from_payload,
 )
 from .datatypes import (
-    OutputDataIdentifier as OutputDataIdentifier,
-    OutputDataPacket as OutputDataPacket,
+    MtData2PacketID as MtData2PacketID,
+    MtData2Packet as MtData2Packet,
 )
+from xsensmti.exceptions import UnexpectedXbusMessage as UnexpectedXbusMessage
 from .exceptions import (
     InvalidReadingData as InvalidReadingData,
-    NotMTData2Message as NotMTData2Message,
     TruncatedPacket as TruncatedPacket,
 )
 from .reading_decode import (

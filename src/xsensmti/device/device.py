@@ -11,7 +11,7 @@ from collections import deque
 from loguru import logger
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import send_and_receive
-from xsensmti.mtdata2 import OutputDataIdentifier
+from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
@@ -147,7 +147,7 @@ class MtiDevice:
         )
         result: MtiDeviceOutputConfig = []
         for i in range(0, len(msg.payload), 4):
-            odi: OutputDataIdentifier = OutputDataIdentifier(
+            odi: MtData2PacketID = MtData2PacketID(
                 int.from_bytes(msg.payload[i : i + 2], "big")
             )
             rate: int = int.from_bytes(msg.payload[i + 2 : i + 4], "big")

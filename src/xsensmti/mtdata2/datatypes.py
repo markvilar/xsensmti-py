@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 
-class OutputDataIdentifier(IntEnum):
+class MtData2PacketID(IntEnum):
     """
     MTData2 output data identifier (XDI) for common MTi GNSS/INS outputs.
     """
@@ -36,11 +36,11 @@ class OutputDataIdentifier(IntEnum):
 
 
 @dataclass(frozen=True)
-class OutputDataPacket:
+class MtData2Packet:
     """
     One output data packet contained in an MTData2 payload.
     """
 
-    data_id: OutputDataIdentifier
+    data_id: MtData2PacketID
     length: int  # 0–255, from the Length byte
     data: bytes  # raw payload slice of that item

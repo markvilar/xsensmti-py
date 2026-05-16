@@ -7,7 +7,7 @@ import click
 from pathlib import Path
 from loguru import logger
 from xsensmti.mtdata2 import (
-    OutputDataPacket,
+    MtData2Packet,
     decode_mtdata2_packets_from_message,
 )
 from xsensmti.xbus import (
@@ -34,7 +34,7 @@ def main(input_path: Path) -> None:
     logger.info(f"MTData2 messages: {len(mtdata2_messages)}")
 
     for i, message in enumerate(mtdata2_messages):
-        packets: list[OutputDataPacket] = decode_mtdata2_packets_from_message(message)
+        packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(message)
         packet_summary: str = ", ".join(p.data_id.name for p in packets)
         logger.info(f"[{i}] {len(packets)} packets: {packet_summary}")
 

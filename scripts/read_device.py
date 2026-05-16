@@ -11,7 +11,7 @@ import click
 
 from loguru import logger
 from xsensmti.mtdata2 import (
-    OutputDataPacket,
+    MtData2Packet,
     Reading,
     decode_mtdata2_packets_from_message,
     decode_reading,
@@ -57,9 +57,7 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
                 if msg is None:
                     continue
 
-                packets: list[OutputDataPacket] = decode_mtdata2_packets_from_message(
-                    msg
-                )
+                packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(msg)
                 readings: list[Reading] = []
                 for pkt in packets:
                     try:

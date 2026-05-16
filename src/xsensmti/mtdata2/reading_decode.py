@@ -1,5 +1,5 @@
 """
-Decoders that unpack OutputDataPacket.data bytes into typed reading dataclasses.
+Decoders that unpack MtData2Packet.data bytes into typed reading dataclasses.
 """
 
 from __future__ import annotations
@@ -8,8 +8,8 @@ import struct
 
 from collections.abc import Callable
 from .datatypes import (
-    OutputDataIdentifier,
-    OutputDataPacket,
+    MtData2PacketID,
+    MtData2Packet,
 )
 from .exceptions import InvalidReadingData
 from .readings import (
@@ -30,36 +30,36 @@ from .readings import (
 )
 
 
-type ReadingDecoder = Callable[[OutputDataPacket], Reading]
+type ReadingDecoder = Callable[[MtData2Packet], Reading]
 
 
-def decode_reading(packet: OutputDataPacket) -> Reading:
+def decode_reading(packet: MtData2Packet) -> Reading:
     """
-    Decode an OutputDataPacket into the appropriate typed reading dataclass.
+    Decode an MtData2Packet into the appropriate typed reading dataclass.
     """
     return _DECODERS[packet.data_id](packet)
 
 
-def _check_length(packet: OutputDataPacket, expected: int) -> None:
+def _check_length(packet: MtData2Packet, expected: int) -> None:
     if len(packet.data) != expected:
         raise InvalidReadingData(
             f"{packet.data_id.name} expects {expected} bytes, got {len(packet.data)}"
         )
 
 
-def _decode_packet_counter(packet: OutputDataPacket) -> PacketCounter:
+def _decode_packet_counter(packet: MtData2Packet) -> PacketCounter:
     _check_length(packet, 2)
     (counter,) = struct.unpack(">H", packet.data)
     return PacketCounter(counter=counter)
 
 
-def _decode_sample_time_fine(packet: OutputDataPacket) -> SampleTimeFine:
+def _decode_sample_time_fine(packet: MtData2Packet) -> SampleTimeFine:
     _check_length(packet, 4)
     (time,) = struct.unpack(">I", packet.data)
     return SampleTimeFine(time=time)
 
 
-def _decode_orientation_quaternion(packet: OutputDataPacket) -> OrientationQuaternion:
+def _decode_orientation_quaternion(packet: MtData2Packet) -> OrientationQuaternion:
     _check_length(packet, 16)
     w: float
     x: float
@@ -69,7 +69,7 @@ def _decode_orientation_quaternion(packet: OutputDataPacket) -> OrientationQuate
     return OrientationQuaternion(w=w, x=x, y=y, z=z)
 
 
-def _decode_orientation_euler(packet: OutputDataPacket) -> OrientationEuler:
+def _decode_orientation_euler(packet: MtData2Packet) -> OrientationEuler:
     _check_length(packet, 12)
     roll: float
     pitch: float
@@ -78,7 +78,7 @@ def _decode_orientation_euler(packet: OutputDataPacket) -> OrientationEuler:
     return OrientationEuler(roll=roll, pitch=pitch, yaw=yaw)
 
 
-def _decode_acceleration(packet: OutputDataPacket) -> Acceleration:
+def _decode_acceleration(packet: MtData2Packet) -> Acceleration:
     _check_length(packet, 12)
     x: float
     y: float
@@ -87,7 +87,7 @@ def _decode_acceleration(packet: OutputDataPacket) -> Acceleration:
     return Acceleration(x=x, y=y, z=z)
 
 
-def _decode_delta_v(packet: OutputDataPacket) -> DeltaV:
+def _decode_delta_v(packet: MtData2Packet) -> DeltaV:
     _check_length(packet, 12)
     x: float
     y: float
@@ -96,7 +96,7 @@ def _decode_delta_v(packet: OutputDataPacket) -> DeltaV:
     return DeltaV(x=x, y=y, z=z)
 
 
-def _decode_rate_of_turn(packet: OutputDataPacket) -> RateOfTurn:
+def _decode_rate_of_turn(packet: MtData2Packet) -> RateOfTurn:
     _check_length(packet, 12)
     x: float
     y: float
@@ -105,7 +105,7 @@ def _decode_rate_of_turn(packet: OutputDataPacket) -> RateOfTurn:
     return RateOfTurn(x=x, y=y, z=z)
 
 
-def _decode_magnetic_field(packet: OutputDataPacket) -> MagneticField:
+def _decode_magnetic_field(packet: MtData2Packet) -> MagneticField:
     _check_length(packet, 12)
     x: float
     y: float
@@ -114,7 +114,7 @@ def _decode_magnetic_field(packet: OutputDataPacket) -> MagneticField:
     return MagneticField(x=x, y=y, z=z)
 
 
-def _decode_velocity_ned(packet: OutputDataPacket) -> VelocityNed:
+def _decode_velocity_ned(packet: MtData2Packet) -> VelocityNed:
     _check_length(packet, 12)
     north: float
     east: float
@@ -123,13 +123,13 @@ def _decode_velocity_ned(packet: OutputDataPacket) -> VelocityNed:
     return VelocityNed(north=north, east=east, down=down)
 
 
-def _decode_altitude_ellipsoid(packet: OutputDataPacket) -> AltitudeEllipsoid:
+def _decode_altitude_ellipsoid(packet: MtData2Packet) -> AltitudeEllipsoid:
     _check_length(packet, 4)
     (altitude,) = struct.unpack(">f", packet.data)
     return AltitudeEllipsoid(altitude=altitude)
 
 
-def _decode_position_ll_ellipsoid(packet: OutputDataPacket) -> PositionLLEllipsoid:
+def _decode_position_ll_ellipsoid(packet: MtData2Packet) -> PositionLLEllipsoid:
     _check_length(packet, 8)
     latitude: float
     longitude: float
@@ -137,7 +137,7 @@ def _decode_position_ll_ellipsoid(packet: OutputDataPacket) -> PositionLLEllipso
     return PositionLLEllipsoid(latitude=latitude, longitude=longitude)
 
 
-def _decode_status_word(packet: OutputDataPacket) -> StatusWord:
+def _decode_status_word(packet: MtData2Packet) -> StatusWord:
     _check_length(packet, 4)
     (status,) = struct.unpack(">I", packet.data)
     return StatusWord(status=status)
@@ -181,7 +181,7 @@ _GNSS_PVT_FORMAT: str = ">IHBBBBBBIiBBBBiiiiIIiiiiIIHHIihH"
 _GNSS_PVT_SIZE: int = struct.calcsize(_GNSS_PVT_FORMAT)
 
 
-def _decode_gnss_pvt(packet: OutputDataPacket) -> GnssPvt:
+def _decode_gnss_pvt(packet: MtData2Packet) -> GnssPvt:
     _check_length(packet, _GNSS_PVT_SIZE)
     (
         itow,
@@ -253,18 +253,18 @@ def _decode_gnss_pvt(packet: OutputDataPacket) -> GnssPvt:
     )
 
 
-_DECODERS: dict[OutputDataIdentifier, ReadingDecoder] = {
-    OutputDataIdentifier.PACKET_COUNTER: _decode_packet_counter,
-    OutputDataIdentifier.SAMPLE_TIME_FINE: _decode_sample_time_fine,
-    OutputDataIdentifier.ORIENTATION_QUATERNION: _decode_orientation_quaternion,
-    OutputDataIdentifier.ORIENTATION_EULER: _decode_orientation_euler,
-    OutputDataIdentifier.ACCELERATION: _decode_acceleration,
-    OutputDataIdentifier.DELTA_V: _decode_delta_v,
-    OutputDataIdentifier.RATE_OF_TURN: _decode_rate_of_turn,
-    OutputDataIdentifier.MAGNETIC_FIELD: _decode_magnetic_field,
-    OutputDataIdentifier.VELOCITY_NED: _decode_velocity_ned,
-    OutputDataIdentifier.ALTITUDE_ELLIPSOID: _decode_altitude_ellipsoid,
-    OutputDataIdentifier.POSITION_LL_ELLIPSOID: _decode_position_ll_ellipsoid,
-    OutputDataIdentifier.STATUS_WORD: _decode_status_word,
-    OutputDataIdentifier.GNSS_PVT: _decode_gnss_pvt,
+_DECODERS: dict[MtData2PacketID, ReadingDecoder] = {
+    MtData2PacketID.PACKET_COUNTER: _decode_packet_counter,
+    MtData2PacketID.SAMPLE_TIME_FINE: _decode_sample_time_fine,
+    MtData2PacketID.ORIENTATION_QUATERNION: _decode_orientation_quaternion,
+    MtData2PacketID.ORIENTATION_EULER: _decode_orientation_euler,
+    MtData2PacketID.ACCELERATION: _decode_acceleration,
+    MtData2PacketID.DELTA_V: _decode_delta_v,
+    MtData2PacketID.RATE_OF_TURN: _decode_rate_of_turn,
+    MtData2PacketID.MAGNETIC_FIELD: _decode_magnetic_field,
+    MtData2PacketID.VELOCITY_NED: _decode_velocity_ned,
+    MtData2PacketID.ALTITUDE_ELLIPSOID: _decode_altitude_ellipsoid,
+    MtData2PacketID.POSITION_LL_ELLIPSOID: _decode_position_ll_ellipsoid,
+    MtData2PacketID.STATUS_WORD: _decode_status_word,
+    MtData2PacketID.GNSS_PVT: _decode_gnss_pvt,
 }
