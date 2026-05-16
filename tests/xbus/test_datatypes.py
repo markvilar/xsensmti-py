@@ -4,17 +4,19 @@ Unit tests for xbus datatype properties and methods.
 
 from __future__ import annotations
 
-from xsens.xbus.datatypes import MessageID
-from xsens.xbus.datatypes import XbusFraming
-from xsens.xbus.datatypes import XbusMessageHeader
-from xsens.xbus.datatypes import XbusMessageHeaderPrefix
+from xsensmti.xbus import (
+    XbusMessageID,
+    XbusFraming,
+    XbusMessageHeader,
+    XbusMessageHeaderPrefix,
+)
 
 
 def _make_standard_prefix(length: int = 0x00) -> XbusMessageHeaderPrefix:
     return XbusMessageHeaderPrefix(
         preamble=XbusFraming.PREAMBLE,
         bid=0xFF,
-        mid=MessageID.MTDATA2,
+        mid=XbusMessageID.MTDATA2,
         length=length,
     )
 
@@ -23,7 +25,7 @@ def _make_standard_header(length: int = 0x00) -> XbusMessageHeader:
     return XbusMessageHeader(
         preamble=XbusFraming.PREAMBLE,
         bid=0xFF,
-        mid=MessageID.MTDATA2,
+        mid=XbusMessageID.MTDATA2,
         length=length,
     )
 
@@ -32,7 +34,7 @@ def _make_extended_header(ext_length: int = 0x00) -> XbusMessageHeader:
     return XbusMessageHeader(
         preamble=XbusFraming.PREAMBLE,
         bid=0xFF,
-        mid=MessageID.MTDATA2,
+        mid=XbusMessageID.MTDATA2,
         length=XbusFraming.EXTLEN,
         ext_length=ext_length,
     )

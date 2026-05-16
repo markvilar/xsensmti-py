@@ -1,6 +1,6 @@
-# XSens-MTi Python Library
+# XSens MTi Python Library
 
-![ci](https://github.com/markvilar/xsens-py/actions/workflows/ubuntu.yml/badge.svg)
+![ci](https://github.com/markvilar/xsensmti-py/actions/workflows/ubuntu.yml/badge.svg)
 
 
 ### Getting started
@@ -8,7 +8,7 @@
 #### Installing `uv`
 
 ```shell
-# Install poetry
+# Install uv
 pip3 install --user uv
 ```
 
@@ -29,13 +29,16 @@ uv run <script>
 
 ```shell
 # Invoke ruff check
-uv run ruff check .
+uv run ruff check src
 
 # Invoke ruff format
-uv run ruff format .
+uv run ruff format src
+
+# Invoke mypy for static checking
+uv run mypy src
 
 # Invoke pytest
-uv run pytest
+uv run pytest tests
 ```
 
 
