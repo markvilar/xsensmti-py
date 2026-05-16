@@ -1,13 +1,34 @@
 """
 Typed dataclasses for decoded MTData2 sensor readings.
 
-Each type corresponds to one OutputDataIdentifier and holds physically
+Each type corresponds to one MtData2PacketID and holds physically
 meaningful values (degrees, metres, m/s, rad/s) rather than raw bytes.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Temperature:
+    """Temperature in degrees Celsius (XDI 0x0810)."""
+
+    temperature: float
+
+
+@dataclass(frozen=True)
+class UtcTime:
+    """UTC timestamp (XDI 0x1010)."""
+
+    nanoseconds: int
+    year: int
+    month: int
+    day: int
+    hour: int
+    minute: int
+    second: int
+    valid: int  # validity flags bitmask
 
 
 @dataclass(frozen=True)
@@ -22,6 +43,13 @@ class SampleTimeFine:
     """Sample timestamp in 10 kHz clock ticks (XDI 0x1060)."""
 
     time: int
+
+
+@dataclass(frozen=True)
+class BaroPressure:
+    """Barometric pressure in Pascal (XDI 0x3010)."""
+
+    pressure: int
 
 
 @dataclass(frozen=True)
@@ -62,6 +90,15 @@ class DeltaV:
 
 
 @dataclass(frozen=True)
+class FreeAcceleration:
+    """Gravity-compensated free acceleration in m/s² (XDI 0x4030)."""
+
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
 class RateOfTurn:
     """Calibrated rate of turn in rad/s (XDI 0x8020)."""
 
@@ -73,6 +110,25 @@ class RateOfTurn:
 @dataclass(frozen=True)
 class MagneticField:
     """Calibrated magnetic field in arbitrary units (XDI 0xC020)."""
+
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
+class DeltaQ:
+    """Delta quaternion orientation increment (XDI 0x8030)."""
+
+    w: float
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
+class PositionEcef:
+    """Position in ECEF coordinates in metres (XDI 0x5030)."""
 
     x: float
     y: float
@@ -101,6 +157,13 @@ class PositionLLEllipsoid:
 
     latitude: float
     longitude: float
+
+
+@dataclass(frozen=True)
+class StatusByte:
+    """Compact device status flags (XDI 0xE010)."""
+
+    status: int
 
 
 @dataclass(frozen=True)
@@ -152,18 +215,34 @@ class GnssPvt:
     mag_accuracy: float  # magnetic declination accuracy (deg)
 
 
+@dataclass(frozen=True)
+class UnknownReading:
+    """Raw bytes for an MTData2 packet whose XDI has no registered decoder."""
+
+    data_id: int
+    data: bytes
+
+
 type Reading = (
-    PacketCounter
+    Temperature
+    | UtcTime
+    | PacketCounter
     | SampleTimeFine
+    | BaroPressure
     | OrientationQuaternion
     | OrientationEuler
     | Acceleration
+    | FreeAcceleration
     | DeltaV
     | RateOfTurn
+    | DeltaQ
     | MagneticField
+    | PositionEcef
     | VelocityNed
     | AltitudeEllipsoid
     | PositionLLEllipsoid
-    | StatusWord
     | GnssPvt
+    | StatusByte
+    | StatusWord
+    | UnknownReading
 )
