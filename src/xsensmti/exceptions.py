@@ -4,6 +4,7 @@ Domain exceptions for the xsensmti library.
 
 from __future__ import annotations
 
+from serial import SerialException as SerialException
 from xsensmti.xbus import XbusMessageID
 
 
