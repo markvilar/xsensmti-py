@@ -66,6 +66,10 @@ class XbusMessageID(IntEnum):
     STRING_OUTPUT_TYPE = 0x8E
     STRING_OUTPUT_TYPE_ACK = 0x8F
 
+    # Option flags — empty payload = request, non-empty = set
+    OPTION_FLAGS = 0x48
+    OPTION_FLAGS_ACK = 0x49
+
     # Filter profile — empty payload = request, non-empty = set
     FILTER_PROFILE = 0x64
     FILTER_PROFILE_ACK = 0x65
