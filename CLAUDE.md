@@ -139,6 +139,16 @@ All data types across both modules use `@dataclass(frozen=True)` — follow this
 
 The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer()` → `XbusMessage` list → parse payload as `OutputDataPacket` using `OutputDataIdentifier`.
 
+## Documentation
+
+XSens product documentation is available under `docs/xsens/`:
+
+- `xsens_mti_family_reference_manual.pdf` — MTi family reference manual
+- `xsens_mti_low_level_documentation.pdf` — low-level Xbus protocol documentation
+- `xsens_mti_600_series_user_manual.pdf` — MTi 600-series (includes MTi 700) user manual
+- `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
+- `xsens_mti_usermanual.pdf` — general MTi user manual
+
 ## Device interaction
 
 When working with a physical XSens MTi sensor on `/dev/ttyUSB0`:
