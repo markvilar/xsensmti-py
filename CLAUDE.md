@@ -14,10 +14,87 @@ When developing Python code in this project, use these skills at the appropriate
 - `/python-library-complete:code-quality` — after implementing a module or non-trivial function. Use it to check for Pythonic idioms, type hint completeness, and mypy strictness issues that ruff won't catch.
 - `/python-library-complete:testing-strategy` — when adding a new module or a protocol feature with structured input space. Use it to design fixtures, parametrization, and property-based tests before writing test code.
 
-## Conventions
+## Python coding style
 
-- All Python code uses type hints on variables, function arguments, and return types.
-- Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
+### Import ordering
+
+Group imports in this order, with a blank line between each group:
+
+1. `import <stdlib>`
+2. `import <external>`
+3. `import <internal>`
+4. `from <stdlib> import ...`
+5. `from <external> import ...`
+6. `from <internal> import ...`
+
+### Strings
+
+Use double quotes for all strings.
+
+### Internal package imports
+
+When importing from internal packages, import classes and functions from the package, not from the module within it. This decouples callers from the internal file layout.
+
+```python
+# Preferred
+from xsensmti.xbus import XbusMessage, XbusMessageID
+
+# Avoid
+from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
+```
+
+### Tooling
+
+- **Linting:** `uv run ruff check .`
+- **Formatting:** `uv run ruff format .`
+- **Type checking:** `uv run mypy .`
+- **Tests:** `uv run pytest`
+
+### Type hints
+
+Always add type hints to variables, function arguments, and return types. Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
+
+### Variable names
+
+Do not use single- or two-character abbreviations for variable names. Use descriptive names that make the code self-documenting.
+
+### Docstrings
+
+Under "Arguments" and "Returns" section headers, add a line of hyphens and do not indent the descriptions.
+
+```python
+def send_and_receive(
+    ser: serial.Serial,
+    mid: XbusMessageID,
+    timeout: float = 2.0,
+) -> XbusMessage:
+    """
+    Send an Xbus message and wait for its acknowledgement.
+
+    Arguments
+    ---------
+    ser: Open serial port to write to and read from.
+    mid: Message ID of the command to send.
+    timeout: Maximum seconds to wait for a response.
+
+    Returns
+    -------
+    The first matching XbusMessage received before the deadline.
+    """
+```
+
+### Multi-item imports
+
+When importing multiple names from the same package or module, use parentheses with one name per line.
+
+```python
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+    encode_xbus_message,
+    iter_xbus_messages_from_buffer,
+)
+```
 
 ## Commands
 
