@@ -1,0 +1,19 @@
+Fix ModemManager interference with XSens MTi USB serial port (/dev/ttyUSB0).
+
+ModemManager probes USB serial ports automatically and holds them open briefly,
+causing pyserial to fail with "device reports readiness to read but returned no data".
+The udev rule below tells ModemManager to ignore the XSens MTi device (VID 2639, PID 0017).
+
+1. Write the udev rule:
+
+    printf 'SUBSYSTEM=="usb", ATTRS{idVendor}=="2639", ATTRS{idProduct}=="0017", ENV{ID_MM_DEVICE_IGNORE}="1"\nSUBSYSTEM=="tty", ATTRS{idVendor}=="2639", ATTRS{idProduct}=="0017", ENV{ID_MM_DEVICE_IGNORE}="1"\n' | sudo tee /etc/udev/rules.d/99-xsens-mti.rules
+
+2. Reload udev rules and trigger on the device:
+
+    sudo udevadm control --reload-rules && sudo udevadm trigger --subsystem-match=usb --attr-match=idVendor=2639
+
+3. Restart ModemManager to pick up the change:
+
+    sudo systemctl restart ModemManager
+
+The rule persists across reboots. No further action needed after initial setup.
