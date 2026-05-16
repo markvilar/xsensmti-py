@@ -10,12 +10,15 @@ from __future__ import annotations
 import click
 
 from loguru import logger
-
-from xsensmti.mtdata2 import Reading, decode_reading, decode_mtdata2_packets_from_message
-from xsensmti.mtdata2 import OutputDataPacket
+from xsensmti.mtdata2 import (
+    OutputDataPacket,
+    Reading,
+    decode_mtdata2_packets_from_message,
+    decode_reading,
+)
 from xsensmti.port import MtiPortInfo
 from xsensmti.session import MtiSession
-from xsensmti.xbus.datatypes import XbusMessage
+from xsensmti.xbus import XbusMessage
 
 
 @click.command()
@@ -54,7 +57,9 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
                 if msg is None:
                     continue
 
-                packets: list[OutputDataPacket] = decode_mtdata2_packets_from_message(msg)
+                packets: list[OutputDataPacket] = decode_mtdata2_packets_from_message(
+                    msg
+                )
                 readings: list[Reading] = []
                 for pkt in packets:
                     try:

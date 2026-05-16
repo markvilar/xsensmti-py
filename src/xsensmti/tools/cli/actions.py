@@ -5,20 +5,26 @@ Actions that bridge CLI commands to the scanner and configurator tools.
 from __future__ import annotations
 
 import datetime
-import serial
 import click
+import serial
 
 from pathlib import Path
-from ..configurator import configure_device
-from ..configurator.presets import OutputPreset, get_preset
 from xsensmti.exceptions import (
     CommandTimeout,
     ConfigurationError,
     UnexpectedResponse,
     XsensError,
 )
-from ..recorder import RecordingResult, record_device
 from xsensmti.port import MtiPortInfo
+from ..configurator import configure_device
+from ..configurator.presets import (
+    OutputPreset,
+    get_preset,
+)
+from ..recorder import (
+    RecordingResult,
+    record_device,
+)
 from ..scanner import scan_ports
 
 

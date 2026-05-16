@@ -5,11 +5,9 @@ Higher-level device operations over serial for XSens MTi devices.
 from __future__ import annotations
 
 import time
-
 import serial
 
 from loguru import logger
-
 from xsensmti.xbus import (
     XbusMessageID,
     iter_xbus_messages_from_buffer,
@@ -20,8 +18,10 @@ from xsensmti.xbus import (
     MissingHeader,
 )
 from xsensmti.exceptions import CommandTimeout
-
-from .serial_io import send_and_receive, send_message
+from .serial_io import (
+    send_and_receive,
+    send_message,
+)
 
 _RECOVERY_TIMEOUT: float = 5.0
 _RECOVERY_INTERVAL: float = 0.1

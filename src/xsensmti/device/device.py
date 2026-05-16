@@ -5,11 +5,10 @@ MtiDevice — handle to a single connected XSens MTi sensor.
 from __future__ import annotations
 
 import threading
-from collections import deque
-
 import serial
-from loguru import logger
 
+from collections import deque
+from loguru import logger
 from xsensmti.mtdata2 import OutputDataIdentifier
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import send_and_receive
@@ -17,7 +16,6 @@ from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
 )
-
 from .datatypes import MtiDeviceState
 from .xbus_reader import XbusStreamReader
 

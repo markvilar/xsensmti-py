@@ -8,7 +8,6 @@ import sys
 import click
 
 from loguru import logger
-
 from ..configurator.presets import PRESET_NAMES
 from .actions import (
     dispatch_configure_device,

@@ -4,19 +4,20 @@ MtiSession — session facade for opening and managing an XSens MTi device.
 
 from __future__ import annotations
 
-from types import TracebackType
-
 import serial
 
+from types import TracebackType
 from loguru import logger
-
 from xsensmti.port import MtiPortInfo
-from xsensmti.serial import goto_config_mode
-from xsensmti.serial import open_serial_port
-from xsensmti.serial import send_and_receive
-from xsensmti.xbus import XbusMessageID
-from xsensmti.xbus import XbusMessage
-
+from xsensmti.serial import (
+    goto_config_mode,
+    open_serial_port,
+    send_and_receive,
+)
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+)
 from xsensmti.device import MtiDevice
 
 

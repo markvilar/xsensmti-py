@@ -14,7 +14,11 @@ from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
 )
-from xsensmti.serial import goto_config_mode, open_serial_port, send_and_receive
+from xsensmti.serial import (
+    goto_config_mode,
+    open_serial_port,
+    send_and_receive,
+)
 
 
 @dataclass(frozen=True)
@@ -73,12 +77,12 @@ def record_device(
         bytes_recorded: int = 0
         start: float = time.monotonic()
 
-        with open(output, "wb", buffering=0) as f:
+        with open(output, "wb", buffering=0) as output_file:
             try:
                 while True:
                     chunk: bytes = ser.read(chunk_size)
                     if chunk:
-                        f.write(chunk)
+                        output_file.write(chunk)
                         bytes_recorded += len(chunk)
             except KeyboardInterrupt:
                 pass

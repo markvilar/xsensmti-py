@@ -18,18 +18,19 @@ When developing Python code in this project, use these skills at the appropriate
 
 ### Import ordering
 
-Group imports in this order, with a blank line between each group:
+Group imports in this order. Separate the `import ...` groups from the `from ... import ...` groups with a blank line.
 
 1. `import <stdlib>`
 2. `import <external>`
 3. `import <internal>`
+
 4. `from <stdlib> import ...`
 5. `from <external> import ...`
 6. `from <internal> import ...`
 
 ### Strings
 
-Use double quotes for all strings.
+Use double quotes for all strings. Single quotes are acceptable inside f-strings to avoid escaping.
 
 ### Internal package imports
 
@@ -56,7 +57,7 @@ Always add type hints to variables, function arguments, and return types. Use th
 
 ### Variable names
 
-Do not use single- or two-character abbreviations for variable names. Use descriptive names that make the code self-documenting.
+Prefer not to use single- or two-character abbreviations for variable names, as descriptive names make the code more readable. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
 
 ### Docstrings
 
