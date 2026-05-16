@@ -6,10 +6,15 @@ import click
 
 from pathlib import Path
 from loguru import logger
-from xsensmti.xbus import XbusMessage, XbusMessageID
-from xsensmti.xbus import decode_xbus_messages_from_buffer
-from xsensmti.mtdata2 import OutputDataPacket
-from xsensmti.mtdata2 import decode_mtdata2_packets_from_message
+from xsensmti.mtdata2 import (
+    OutputDataPacket,
+    decode_mtdata2_packets_from_message,
+)
+from xsensmti.xbus import (
+    XbusMessage,
+    XbusMessageID,
+    decode_xbus_messages_from_buffer,
+)
 
 
 @click.command()

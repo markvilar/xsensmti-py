@@ -8,9 +8,11 @@ import serial
 import serial.tools.list_ports
 
 from collections.abc import Sequence
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import (
+    Future,
+    ThreadPoolExecutor,
+)
 from dataclasses import dataclass
-
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.xbus import (
@@ -18,8 +20,15 @@ from xsensmti.xbus import (
     XbusMessageID,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.serial import open_serial_port, send_and_receive
-from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
+from xsensmti.serial import (
+    open_serial_port,
+    send_and_receive,
+)
+from xsensmti.exceptions import (
+    CommandTimeout,
+    DeviceNotFound,
+    UnexpectedResponse,
+)
 
 
 @dataclass(frozen=True)

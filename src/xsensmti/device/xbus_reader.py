@@ -5,10 +5,10 @@ XbusStreamReader — background reader for streaming Xbus messages from a serial
 from __future__ import annotations
 
 import threading
+import serial
+
 from collections.abc import Callable
 from enum import IntEnum
-
-import serial
 from loguru import logger
 
 from xsensmti.xbus import (

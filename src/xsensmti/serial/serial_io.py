@@ -5,7 +5,6 @@ Serial port helpers for sending and receiving Xbus messages.
 from __future__ import annotations
 
 import time
-
 import serial
 
 from xsensmti.xbus import (
@@ -19,7 +18,10 @@ from xsensmti.xbus import (
     MissingChecksum,
     MissingHeader,
 )
-from xsensmti.exceptions import CommandTimeout, UnexpectedResponse
+from xsensmti.exceptions import (
+    CommandTimeout,
+    UnexpectedResponse,
+)
 
 
 def open_serial_port(

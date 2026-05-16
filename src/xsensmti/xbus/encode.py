@@ -4,7 +4,11 @@ Encoder for Xbus frames — the write-path counterpart to decode.py.
 
 from __future__ import annotations
 
-from .datatypes import XbusMessageID, PayloadLength, XbusFraming
+from .datatypes import (
+    XbusFraming,
+    PayloadLength,
+    XbusMessageID,
+)
 
 
 def encode_xbus_message(
@@ -24,14 +28,23 @@ def encode_xbus_message(
             f"payload length {len(payload)} exceeds maximum {PayloadLength.MAX_EXT}"
         )
 
+    body: bytes
     if len(payload) <= PayloadLength.MAX_STD:
         body = bytes([bid, int(mid), len(payload)]) + payload
     else:
-        n = len(payload)
+        payload_length: int = len(payload)
         body = (
-            bytes([bid, int(mid), XbusFraming.EXTLEN, (n >> 8) & 0xFF, n & 0xFF])
+            bytes(
+                [
+                    bid,
+                    int(mid),
+                    XbusFraming.EXTLEN,
+                    (payload_length >> 8) & 0xFF,
+                    payload_length & 0xFF,
+                ]
+            )
             + payload
         )
 
-    checksum = (-sum(body)) & 0xFF
+    checksum: int = (-sum(body)) & 0xFF
     return bytes([XbusFraming.PREAMBLE]) + body + bytes([checksum])

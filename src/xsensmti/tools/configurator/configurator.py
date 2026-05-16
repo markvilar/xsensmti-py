@@ -11,8 +11,14 @@ from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
 )
-from xsensmti.serial import open_serial_port, send_and_receive
-from .presets import OutputPreset, build_output_configuration_payload
+from xsensmti.serial import (
+    open_serial_port,
+    send_and_receive,
+)
+from .presets import (
+    OutputPreset,
+    build_output_configuration_payload,
+)
 
 
 def configure_device(

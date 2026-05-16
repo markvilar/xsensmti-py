@@ -7,24 +7,27 @@ from __future__ import annotations
 import struct
 
 from collections.abc import Callable
-
-from .datatypes import OutputDataIdentifier
-from .datatypes import OutputDataPacket
+from .datatypes import (
+    OutputDataIdentifier,
+    OutputDataPacket,
+)
 from .exceptions import InvalidReadingData
-from .readings import Reading
-from .readings import Acceleration
-from .readings import AltitudeEllipsoid
-from .readings import DeltaV
-from .readings import GnssPvt
-from .readings import MagneticField
-from .readings import OrientationEuler
-from .readings import OrientationQuaternion
-from .readings import PacketCounter
-from .readings import PositionLLEllipsoid
-from .readings import RateOfTurn
-from .readings import SampleTimeFine
-from .readings import StatusWord
-from .readings import VelocityNed
+from .readings import (
+    Acceleration,
+    AltitudeEllipsoid,
+    DeltaV,
+    GnssPvt,
+    MagneticField,
+    OrientationEuler,
+    OrientationQuaternion,
+    PacketCounter,
+    PositionLLEllipsoid,
+    RateOfTurn,
+    Reading,
+    SampleTimeFine,
+    StatusWord,
+    VelocityNed,
+)
 
 
 type ReadingDecoder = Callable[[OutputDataPacket], Reading]
