@@ -8,6 +8,7 @@ import serial
 import serial.tools.list_ports
 
 from collections.abc import Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 
 from loguru import logger
@@ -17,7 +18,7 @@ from xsensmti.xbus import (
     XbusMessageID,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.serial import goto_config_mode, open_serial_port, send_and_receive
+from xsensmti.serial import open_serial_port, send_and_receive
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
 
 
@@ -47,7 +48,12 @@ def scan_port(
         ser = open_serial_port(port, opts.baud, read_timeout=0.1)
         ser.reset_input_buffer()
 
-        goto_config_mode(ser, opts.timeout)
+        send_and_receive(
+            ser,
+            XbusMessageID.GOTOCONFIG,
+            expected_mid=XbusMessageID.GOTOCONFIG_ACK,
+            timeout=opts.timeout,
+        )
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
@@ -102,19 +108,14 @@ def scan_ports(
     ports: Sequence[ListPortInfo] = serial.tools.list_ports.comports()
 
     if usb_only:
-        ports = [p for p in ports if p.vid is not None]
+        ports = [port for port in ports if port.vid is not None]
 
     opts: ScanOptions = ScanOptions(baud=baud, timeout=timeout)
 
-    results: list[MtiPortInfo] = []
-    for port_info in ports:
-        result: MtiPortInfo | None = scan_port(
-            port_info.device,
-            opts,
-            vid=port_info.vid,
-            pid=port_info.pid,
-        )
-        if result is not None:
-            results.append(result)
+    with ThreadPoolExecutor() as executor:
+        futures: list[Future[MtiPortInfo | None]] = [
+            executor.submit(scan_port, port.device, opts, port.vid, port.pid)
+            for port in ports
+        ]
 
-    return results
+    return [result for future in futures if (result := future.result()) is not None]
