@@ -9,17 +9,21 @@ import serial
 
 from collections import deque
 from loguru import logger
-from xsensmti.mtdata2 import OutputDataIdentifier
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import send_and_receive
+from xsensmti.mtdata2 import OutputDataIdentifier
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
 )
-from .datatypes import MtiDeviceState
+from .datatypes import (
+    MtiDeviceConfig,
+    MtiDeviceFilterProfile,
+    MtiDeviceOptions,
+    MtiDeviceOutputConfig,
+    MtiDeviceState,
+)
 from .xbus_reader import XbusStreamReader
-
-type OutputConfig = list[tuple[OutputDataIdentifier, int]]
 
 
 class MtiDevice:
@@ -121,7 +125,7 @@ class MtiDevice:
 
     # --- Output configuration ---
 
-    def set_output_config(self, config: OutputConfig) -> None:
+    def set_output_config(self, config: MtiDeviceOutputConfig) -> None:
         payload: bytes = b"".join(
             int(odi).to_bytes(2, "big") + rate.to_bytes(2, "big")
             for odi, rate in config
@@ -134,14 +138,14 @@ class MtiDevice:
             timeout=self._timeout,
         )
 
-    def output_config(self) -> OutputConfig:
+    def output_config(self) -> MtiDeviceOutputConfig:
         msg: XbusMessage = send_and_receive(
             self._ser,
             XbusMessageID.OUTPUT_CONFIGURATION,
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
-        result: OutputConfig = []
+        result: MtiDeviceOutputConfig = []
         for i in range(0, len(msg.payload), 4):
             odi: OutputDataIdentifier = OutputDataIdentifier(
                 int.from_bytes(msg.payload[i : i + 2], "big")
@@ -149,6 +153,33 @@ class MtiDevice:
             rate: int = int.from_bytes(msg.payload[i + 2 : i + 4], "big")
             result.append((odi, rate))
         return result
+
+    def request_options(self) -> MtiDeviceOptions:
+        msg: XbusMessage = send_and_receive(
+            self._ser,
+            XbusMessageID.OPTION_FLAGS,
+            expected_mid=XbusMessageID.OPTION_FLAGS_ACK,
+            timeout=self._timeout,
+        )
+        return MtiDeviceOptions.from_payload(msg.payload)
+
+    def request_filter_profile(self) -> MtiDeviceFilterProfile:
+        msg: XbusMessage = send_and_receive(
+            self._ser,
+            XbusMessageID.FILTER_PROFILE,
+            expected_mid=XbusMessageID.FILTER_PROFILE_ACK,
+            timeout=self._timeout,
+        )
+        return MtiDeviceFilterProfile.from_payload(msg.payload)
+
+    def request_config(self) -> MtiDeviceConfig:
+        msg: XbusMessage = send_and_receive(
+            self._ser,
+            XbusMessageID.REQ_CONFIGURATION,
+            expected_mid=XbusMessageID.CONFIGURATION,
+            timeout=self._timeout,
+        )
+        return MtiDeviceConfig.from_payload(msg.payload)
 
     # --- Data retrieval ---
 
