@@ -7,6 +7,7 @@ from __future__ import annotations
 from types import TracebackType
 
 import serial
+
 from loguru import logger
 
 from xsensmti.port import MtiPortInfo
@@ -24,7 +25,6 @@ class MtiSession:
         self._port_info: MtiPortInfo = port_info
         self._timeout: float = timeout
         self._device: MtiDevice | None = None
-        self._ser: serial.Serial | None = None
 
     def open(self) -> MtiDevice:
         ser: serial.Serial = open_serial_port(
@@ -44,7 +44,6 @@ class MtiSession:
             f"hardware {hardware_version}"
         )
 
-        self._ser = ser
         self._device = MtiDevice(
             port_info=self._port_info,
             firmware_version=firmware_version,
@@ -55,12 +54,9 @@ class MtiSession:
         return self._device
 
     def close(self) -> None:
-        if self._device is not None and self._device.is_measuring():
-            self._device.goto_config()
-        if self._ser is not None:
-            self._ser.close()
-            self._ser = None
-        self._device = None
+        if self._device is not None:
+            self._device.close()
+            self._device = None
 
     def __enter__(self) -> MtiDevice:
         return self.open()

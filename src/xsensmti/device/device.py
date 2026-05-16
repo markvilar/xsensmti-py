@@ -16,10 +16,10 @@ from xsensmti.serial import send_and_receive
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
-    drain_xbus_messages,
 )
 
 from .datatypes import MtiDeviceState
+from .xbus_reader import XbusStreamReader
 
 type OutputConfig = list[tuple[OutputDataIdentifier, int]]
 
@@ -42,8 +42,11 @@ class MtiDevice:
         self._state: MtiDeviceState = MtiDeviceState.CONFIG
         self._buffer: deque[XbusMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
-        self._stop_event: threading.Event = threading.Event()
-        self._reader_thread: threading.Thread | None = None
+        self._reader: XbusStreamReader = XbusStreamReader(
+            ser=self._ser,
+            on_message=self._on_message,
+            on_error=self._on_reader_error,
+        )
 
     # --- Identity ---
 
@@ -77,7 +80,7 @@ class MtiDevice:
         return self._state == MtiDeviceState.MEASUREMENT
 
     def goto_config(self) -> None:
-        self._stop_reader()
+        self._reader.stop()
         send_and_receive(
             self._ser,
             XbusMessageID.GOTOCONFIG,
@@ -95,11 +98,11 @@ class MtiDevice:
             timeout=self._timeout,
         )
         self._state = MtiDeviceState.MEASUREMENT
-        self._start_reader()
+        self._reader.start()
         logger.debug(f"{self._port_info.port}: entered measurement mode")
 
     def reset(self) -> None:
-        self._stop_reader()
+        self._reader.stop()
         send_and_receive(
             self._ser,
             XbusMessageID.RESET,
@@ -109,7 +112,7 @@ class MtiDevice:
         self._state = MtiDeviceState.CONFIG
 
     def restore_factory_defaults(self) -> None:
-        self._stop_reader()
+        self._reader.stop()
         send_and_receive(
             self._ser,
             XbusMessageID.RESTORE_FACTORY_DEFAULTS,
@@ -161,9 +164,9 @@ class MtiDevice:
         with self._buffer_lock:
             if not self._buffer:
                 return None
-            msg: XbusMessage = self._buffer[-1]
+            message: XbusMessage = self._buffer[-1]
             self._buffer.clear()
-            return msg
+            return message
 
     def request_data(self) -> XbusMessage:
         return send_and_receive(
@@ -193,46 +196,23 @@ class MtiDevice:
     def send_raw_message(self, data: bytes) -> None:
         self._ser.write(data)
 
+    def close(self) -> None:
+        if self.is_measuring():
+            self.goto_config()
+        self._ser.close()
+
     def reopen_port(self) -> None:
-        self._stop_reader()
+        self._reader.stop()
         self._ser.close()
         self._ser.open()
         self._state = MtiDeviceState.CONFIG
 
     # --- Internal ---
 
-    def _start_reader(self) -> None:
-        self._stop_event.clear()
-        self._reader_thread = threading.Thread(
-            target=self._reader_loop,
-            daemon=True,
-            name=f"mti-reader-{self._port_info.port}",
-        )
-        self._reader_thread.start()
+    def _on_message(self, message: XbusMessage) -> None:
+        if message.header.mid == XbusMessageID.MTDATA2:
+            with self._buffer_lock:
+                self._buffer.append(message)
 
-    def _stop_reader(self) -> None:
-        if self._reader_thread is None:
-            return
-        self._stop_event.set()
-        self._reader_thread.join(timeout=2.0)
-        self._reader_thread = None
-
-    def _reader_loop(self) -> None:
-        accumulator: bytearray = bytearray()
-
-        while not self._stop_event.is_set():
-            try:
-                chunk: bytes = self._ser.read(256)
-            except serial.SerialException as exc:
-                logger.error(f"{self._port_info.port}: serial error in reader: {exc}")
-                self._state = MtiDeviceState.CONFIG
-                self._stop_event.set()
-                break
-
-            if chunk:
-                accumulator.extend(chunk)
-
-            for message in drain_xbus_messages(accumulator):
-                if message.header.mid == XbusMessageID.MTDATA2:
-                    with self._buffer_lock:
-                        self._buffer.append(message)
+    def _on_reader_error(self, exc: Exception) -> None:
+        self._state = MtiDeviceState.CONFIG
