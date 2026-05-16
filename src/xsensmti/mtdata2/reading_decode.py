@@ -177,7 +177,7 @@ def _decode_status_word(packet: MtData2Packet) -> StatusWord:
     return StatusWord(status=status)
 
 
-# UBX-NAV-PVT layout (92 bytes, big-endian):
+# XSens GnssPvtData layout (94 bytes, big-endian) — Table 25:
 #   I  itow        uint32  GPS time of week (ms)
 #   H  year        uint16
 #   B  month       uint8
@@ -190,28 +190,30 @@ def _decode_status_word(packet: MtData2Packet) -> StatusWord:
 #   i  nano        int32   sub-second fraction (ns)
 #   B  fix_type    uint8
 #   B  flags       uint8
-#   B  flags2      uint8
 #   B  num_sv      uint8
+#   B  reserved1   uint8   (discarded)
 #   i  lon         int32   × 1e-7 → degrees
 #   i  lat         int32   × 1e-7 → degrees
-#   i  height      int32   × 1e-3 → metres (above ellipsoid)
-#   i  h_msl       int32   × 1e-3 → metres (above MSL)
-#   I  h_acc       uint32  × 1e-3 → metres
-#   I  v_acc       uint32  × 1e-3 → metres
-#   i  vel_n       int32   × 1e-3 → m/s
-#   i  vel_e       int32   × 1e-3 → m/s
-#   i  vel_d       int32   × 1e-3 → m/s
-#   i  g_speed     int32   × 1e-3 → m/s
+#   i  height      int32   mm → metres (above ellipsoid)
+#   i  h_msl       int32   mm → metres (above MSL)
+#   I  h_acc       uint32  mm → metres
+#   I  v_acc       uint32  mm → metres
+#   i  vel_n       int32   mm/s → m/s
+#   i  vel_e       int32   mm/s → m/s
+#   i  vel_d       int32   mm/s → m/s
+#   i  g_speed     int32   mm/s → m/s
 #   i  head_mot    int32   × 1e-5 → degrees
-#   I  s_acc       uint32  × 1e-3 → m/s
+#   I  s_acc       uint32  mm/s → m/s
 #   I  head_acc    uint32  × 1e-5 → degrees
-#   H  p_dop       uint16  × 0.01
-#   H  reserved1   uint16  (discarded)
-#   I  reserved2   uint32  (discarded)
 #   i  head_veh    int32   × 1e-5 → degrees
-#   h  mag_dec     int16   × 0.01 → degrees
-#   H  mag_acc     uint16  × 0.01 → degrees
-_GNSS_PVT_FORMAT: str = ">IHBBBBBBIiBBBBiiiiIIiiiiIIHHIihH"
+#   H  gdop        uint16  × 0.01
+#   H  pdop        uint16  × 0.01
+#   H  tdop        uint16  × 0.01
+#   H  vdop        uint16  × 0.01
+#   H  hdop        uint16  × 0.01
+#   H  ndop        uint16  × 0.01
+#   H  edop        uint16  × 0.01
+_GNSS_PVT_FORMAT: str = ">IHBBBBBBIiBBBBiiiiIIiiiiiIIiHHHHHHH"
 _GNSS_PVT_SIZE: int = struct.calcsize(_GNSS_PVT_FORMAT)
 
 
@@ -230,8 +232,8 @@ def _decode_gnss_pvt(packet: MtData2Packet) -> GnssPvt:
         nano,
         fix_type,
         flags,
-        flags2,
         num_sv,
+        _reserved1,
         lon,
         lat,
         height,
@@ -245,12 +247,14 @@ def _decode_gnss_pvt(packet: MtData2Packet) -> GnssPvt:
         head_mot,
         s_acc,
         head_acc,
-        p_dop,
-        _reserved1,
-        _reserved2,
         head_veh,
-        mag_dec,
-        mag_acc,
+        gdop,
+        pdop,
+        tdop,
+        vdop,
+        hdop,
+        ndop,
+        edop,
     ) = struct.unpack(_GNSS_PVT_FORMAT, packet.data)
     return GnssPvt(
         itow=itow,
@@ -265,7 +269,6 @@ def _decode_gnss_pvt(packet: MtData2Packet) -> GnssPvt:
         nanoseconds=nano,
         fix_type=fix_type,
         flags=flags,
-        flags2=flags2,
         num_sv=num_sv,
         longitude=lon * 1e-7,
         latitude=lat * 1e-7,
@@ -280,10 +283,14 @@ def _decode_gnss_pvt(packet: MtData2Packet) -> GnssPvt:
         heading_motion=head_mot * 1e-5,
         speed_accuracy=s_acc * 1e-3,
         heading_accuracy=head_acc * 1e-5,
-        position_dop=p_dop * 0.01,
         heading_vehicle=head_veh * 1e-5,
-        mag_declination=mag_dec * 0.01,
-        mag_accuracy=mag_acc * 0.01,
+        geom_dop=gdop * 0.01,
+        pos_dop=pdop * 0.01,
+        time_dop=tdop * 0.01,
+        vert_dop=vdop * 0.01,
+        horiz_dop=hdop * 0.01,
+        north_dop=ndop * 0.01,
+        east_dop=edop * 0.01,
     )
 
 

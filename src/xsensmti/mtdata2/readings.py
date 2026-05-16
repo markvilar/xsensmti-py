@@ -178,8 +178,9 @@ class GnssPvt:
     """
     GNSS position/velocity/time solution (XDI 0x7010).
 
-    Mirrors the u-blox UBX-NAV-PVT message passed through by the MTi GNSS receiver.
-    Positional and velocity fields are stored in physical units (degrees, metres, m/s).
+    Parsed from the XSens GnssPvtData format (Table 25, MT Low Level
+    Communication Protocol Documentation). Positional and velocity fields are
+    stored in physical units (degrees, metres, m/s).
     """
 
     itow: int  # GPS time of week (ms)
@@ -192,9 +193,8 @@ class GnssPvt:
     valid: int  # validity flags bitmask
     time_accuracy: int  # time accuracy estimate (ns)
     nanoseconds: int  # sub-second fraction (ns, signed)
-    fix_type: int  # 0=no fix, 2=2-D, 3=3-D, 4=GNSS+dead rec., 5=time only
+    fix_type: int  # 0=no fix, 1=dead rec., 2=2-D, 3=3-D, 4=GNSS+dead rec., 5=time only
     flags: int  # fix status flags bitmask
-    flags2: int  # additional flags bitmask
     num_sv: int  # number of satellites used in solution
     longitude: float  # degrees
     latitude: float  # degrees
@@ -206,13 +206,17 @@ class GnssPvt:
     vel_east: float  # NED east velocity (m/s)
     vel_down: float  # NED down velocity (m/s)
     ground_speed: float  # 2-D ground speed (m/s)
-    heading_motion: float  # heading of motion (deg)
+    heading_motion: float  # 2-D heading of motion (deg)
     speed_accuracy: float  # speed accuracy estimate (m/s)
     heading_accuracy: float  # heading accuracy estimate (deg)
-    position_dop: float  # position dilution of precision
-    heading_vehicle: float  # heading of vehicle (deg)
-    mag_declination: float  # magnetic declination (deg)
-    mag_accuracy: float  # magnetic declination accuracy (deg)
+    heading_vehicle: float  # 2-D heading of vehicle (deg)
+    geom_dop: float  # geometric dilution of precision
+    pos_dop: float  # position dilution of precision
+    time_dop: float  # time dilution of precision
+    vert_dop: float  # vertical dilution of precision
+    horiz_dop: float  # horizontal dilution of precision
+    north_dop: float  # northing dilution of precision
+    east_dop: float  # easting dilution of precision
 
 
 @dataclass(frozen=True)
