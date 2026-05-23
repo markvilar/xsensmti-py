@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A minimal Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols.
+A Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols, and device communication and control.
 
 ## Skills
 
@@ -140,6 +140,8 @@ All data types across both modules use `@dataclass(frozen=True)` — follow this
 The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer()` → `XbusMessage` list → parse payload as `OutputDataPacket` using `OutputDataIdentifier`.
 
 ## Documentation
+
+The XSens MT SDK (C++) is available at https://github.com/markvilar/xsens-sdk — useful for understanding the reference architecture (`XsControl`, `XsDevice`, `XsCallback`, `XsDataPacket`) when making design decisions for this library.
 
 XSens product documentation is available under `docs/xsens/`:
 

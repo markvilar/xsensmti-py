@@ -12,27 +12,25 @@ from enum import IntEnum, IntFlag
 from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import XbusMessage
 
+
 type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
 @dataclass(frozen=True)
-class MtiDeviceInfo:
-    """Identity and version information for a connected MTi device."""
+class MtiDeviceID:
+    """Identifier for a MTi device."""
 
-    port: str
-    baud: int
     device_id: int
     product_code: str
     firmware_version: str
     hardware_version: str
-    is_usb: bool = False
 
 
 @dataclass(frozen=True)
 class MtiMessageHeader:
     """Receipt metadata for a single Xbus message."""
 
-    device_info: MtiDeviceInfo
+    device_id: MtiDeviceID
     timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
 
 

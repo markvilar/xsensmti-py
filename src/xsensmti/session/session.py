@@ -18,7 +18,7 @@ from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
 )
-from xsensmti.device import MtiDevice, MtiDeviceInfo
+from xsensmti.device import MtiDevice, MtiDeviceID
 
 
 class MtiSession:
@@ -40,23 +40,20 @@ class MtiSession:
         firmware_version: str = self._query_firmware_version(ser)
         hardware_version: str = self._query_hardware_version(ser)
 
-        device_info: MtiDeviceInfo = MtiDeviceInfo(
-            port=self._port_info.port,
-            baud=self._port_info.baud,
+        device_id: MtiDeviceID = MtiDeviceID(
             device_id=self._port_info.device_id,
             product_code=self._port_info.product_code,
             firmware_version=firmware_version,
             hardware_version=hardware_version,
-            is_usb=self._port_info.is_usb,
         )
 
         logger.info(
-            f"{device_info.port}: firmware {device_info.firmware_version}, "
-            f"hardware {device_info.hardware_version}"
+            f"{self._port_info.port}: firmware {device_id.firmware_version}, "
+            f"hardware {device_id.hardware_version}"
         )
 
         self._device = MtiDevice(
-            device_info=device_info,
+            device_id=device_id,
             ser=ser,
             timeout=self._timeout,
         )
