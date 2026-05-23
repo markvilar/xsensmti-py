@@ -11,6 +11,8 @@ from .datatypes import (
     MtiDeviceOptionFlags as MtiDeviceOptionFlags,
     MtiDeviceOptions as MtiDeviceOptions,
     MtiDeviceState as MtiDeviceState,
+    MtiMessage as MtiMessage,
+    MtiMessageHeader as MtiMessageHeader,
 )
 from .device import MtiDevice as MtiDevice
 from .xbus_reader import (
