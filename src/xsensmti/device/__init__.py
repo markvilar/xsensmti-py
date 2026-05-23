@@ -14,6 +14,7 @@ from .datatypes import (
     MtiMessage as MtiMessage,
     MtiMessageHeader as MtiMessageHeader,
 )
+from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
 from .device import MtiDevice as MtiDevice
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,
