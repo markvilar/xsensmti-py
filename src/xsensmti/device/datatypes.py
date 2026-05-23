@@ -4,12 +4,30 @@ Data types for MtiDevice state and configuration responses.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 
 from xsensmti.mtdata2 import MtData2PacketID
+from xsensmti.xbus import XbusMessage
 
 type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
+
+
+@dataclass(frozen=True)
+class MtiDeviceInfo:
+    """Identity and version information for a connected MTi device."""
+
+    port: str
+    baud: int
+    device_id: int
+    product_code: str
+    firmware_version: str
+    hardware_version: str
+    is_usb: bool = False
+
+
+type MessageCallback = Callable[[MtiDeviceInfo, XbusMessage], None]
 
 
 class MtiDeviceState(IntEnum):

@@ -9,7 +9,6 @@ import serial
 
 from collections import deque
 from loguru import logger
-from xsensmti.port import MtiPortInfo
 from xsensmti.serial import send_and_receive
 from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import (
@@ -17,8 +16,10 @@ from xsensmti.xbus import (
     XbusMessageID,
 )
 from .datatypes import (
+    MessageCallback,
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
+    MtiDeviceInfo,
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
     MtiDeviceState,
@@ -29,19 +30,18 @@ from .xbus_reader import XbusStreamReader
 class MtiDevice:
     def __init__(
         self,
-        port_info: MtiPortInfo,
-        firmware_version: str,
-        hardware_version: str,
+        device_info: MtiDeviceInfo,
         ser: serial.Serial,
         timeout: float = 5.0,
         buffer_size: int = 100,
     ) -> None:
-        self._port_info: MtiPortInfo = port_info
-        self._firmware_version: str = firmware_version
-        self._hardware_version: str = hardware_version
+        self._device_info: MtiDeviceInfo = device_info
         self._ser: serial.Serial = ser
         self._timeout: float = timeout
-        self._state: MtiDeviceState = MtiDeviceState.CONFIG
+        self._state_lock: threading.Lock = threading.Lock()
+        self._state_value: MtiDeviceState = MtiDeviceState.CONFIG
+        self._on_message_callback: MessageCallback | None = None
+        self._callback_lock: threading.Lock = threading.Lock()
         self._buffer: deque[XbusMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
         self._reader: XbusStreamReader = XbusStreamReader(
@@ -50,28 +50,38 @@ class MtiDevice:
             on_error=self._on_reader_error,
         )
 
+    @property
+    def _state(self) -> MtiDeviceState:
+        with self._state_lock:
+            return self._state_value
+
+    @_state.setter
+    def _state(self, value: MtiDeviceState) -> None:
+        with self._state_lock:
+            self._state_value = value
+
     # --- Identity ---
 
     def device_id(self) -> int:
-        return self._port_info.device_id
+        return self._device_info.device_id
 
     def product_code(self) -> str:
-        return self._port_info.product_code
+        return self._device_info.product_code
 
     def port_name(self) -> str:
-        return self._port_info.port
+        return self._device_info.port
 
     def baud_rate(self) -> int:
-        return self._port_info.baud
+        return self._device_info.baud
 
-    def port_info(self) -> MtiPortInfo:
-        return self._port_info
+    def device_info(self) -> MtiDeviceInfo:
+        return self._device_info
 
     def firmware_version(self) -> str:
-        return self._firmware_version
+        return self._device_info.firmware_version
 
     def hardware_version(self) -> str:
-        return self._hardware_version
+        return self._device_info.hardware_version
 
     # --- State ---
 
@@ -80,6 +90,20 @@ class MtiDevice:
 
     def is_measuring(self) -> bool:
         return self._state == MtiDeviceState.MEASUREMENT
+
+    def set_on_message(self, callback: MessageCallback | None) -> None:
+        with self._callback_lock:
+            self._on_message_callback = callback
+
+    def update(self) -> None:
+        with self._buffer_lock:
+            messages = list(self._buffer)
+            self._buffer.clear()
+        with self._callback_lock:
+            callback = self._on_message_callback
+        if callback is not None:
+            for message in messages:
+                callback(self._device_info, message)
 
     def goto_config(self) -> None:
         self._reader.stop()
@@ -90,7 +114,7 @@ class MtiDevice:
             timeout=self._timeout,
         )
         self._state = MtiDeviceState.CONFIG
-        logger.debug(f"{self._port_info.port}: entered config mode")
+        logger.debug(f"{self._device_info.port}: entered config mode")
 
     def goto_measurement(self) -> None:
         send_and_receive(
@@ -101,7 +125,7 @@ class MtiDevice:
         )
         self._state = MtiDeviceState.MEASUREMENT
         self._reader.start()
-        logger.debug(f"{self._port_info.port}: entered measurement mode")
+        logger.debug(f"{self._device_info.port}: entered measurement mode")
 
     def reset(self) -> None:
         self._reader.stop()
@@ -183,20 +207,6 @@ class MtiDevice:
 
     # --- Data retrieval ---
 
-    def take_first_data_packet_in_queue(self) -> XbusMessage | None:
-        try:
-            return self._buffer.popleft()
-        except IndexError:
-            return None
-
-    def last_available_live_data(self) -> XbusMessage | None:
-        with self._buffer_lock:
-            if not self._buffer:
-                return None
-            message: XbusMessage = self._buffer[-1]
-            self._buffer.clear()
-            return message
-
     def request_data(self) -> XbusMessage:
         return send_and_receive(
             self._ser,
@@ -239,9 +249,8 @@ class MtiDevice:
     # --- Internal ---
 
     def _on_message(self, message: XbusMessage) -> None:
-        if message.header.mid == XbusMessageID.MTDATA2:
-            with self._buffer_lock:
-                self._buffer.append(message)
+        with self._buffer_lock:
+            self._buffer.append(message)
 
     def _on_reader_error(self, exc: Exception) -> None:
         self._state = MtiDeviceState.CONFIG

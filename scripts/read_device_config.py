@@ -14,9 +14,9 @@ import click
 
 from loguru import logger
 from xsensmti.device import (
-    MtiDevice,
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
+    MtiDeviceInfo,
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
 )
@@ -38,25 +38,26 @@ def main(port: str, baud: int, timeout: float) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
+        info: MtiDeviceInfo = device.device_info()
         logger.info(
-            f"Connected: {device.product_code() or '(unknown)'}  "
-            f"ID: {device.device_id():#010x}  "
-            f"FW: {device.firmware_version()}  HW: {device.hardware_version()}"
+            f"Connected: {info.product_code or '(unknown)'}  "
+            f"ID: {info.device_id:#010x}  "
+            f"FW: {info.firmware_version}  HW: {info.hardware_version}"
         )
-        _print_identity(device)
+        _print_identity(info)
         _print_config(device.request_config())
         _print_filter_profile(device.request_filter_profile())
         _print_output_config(device.output_config())
         _print_options(device.request_options())
 
 
-def _print_identity(device: MtiDevice) -> None:
+def _print_identity(info: MtiDeviceInfo) -> None:
     click.echo("\n--- Device ---")
-    click.echo(f"  ID:       {device.device_id():#010x}")
-    click.echo(f"  Product:  {device.product_code() or '(unknown)'}")
-    click.echo(f"  Port:     {device.port_name()} @ {device.baud_rate()} baud")
-    click.echo(f"  Firmware: {device.firmware_version()}")
-    click.echo(f"  Hardware: {device.hardware_version()}")
+    click.echo(f"  ID:       {info.device_id:#010x}")
+    click.echo(f"  Product:  {info.product_code or '(unknown)'}")
+    click.echo(f"  Port:     {info.port} @ {info.baud} baud")
+    click.echo(f"  Firmware: {info.firmware_version}")
+    click.echo(f"  Hardware: {info.hardware_version}")
 
 
 def _print_config(config: MtiDeviceConfig) -> None:
