@@ -13,6 +13,7 @@ from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
+    build_xbus_command,
 )
 from .communicator import MtiDeviceCommunicator
 from .datatypes import (
@@ -99,7 +100,7 @@ class MtiDevice:
         if self.is_measuring():
             self._communicator.goto_config()
         self._communicator.send_and_receive(
-            XbusMessageID.RESET,
+            build_xbus_command(XbusMessageID.RESET),
             expected_mid=XbusMessageID.RESET_ACK,
             timeout=self._timeout,
         )
@@ -109,7 +110,7 @@ class MtiDevice:
         if self.is_measuring():
             self._communicator.goto_config()
         self._communicator.send_and_receive(
-            XbusMessageID.RESTORE_FACTORY_DEFAULTS,
+            build_xbus_command(XbusMessageID.RESTORE_FACTORY_DEFAULTS),
             expected_mid=XbusMessageID.RESTORE_FACTORY_DEFAULTS_ACK,
             timeout=self._timeout,
         )
@@ -123,63 +124,60 @@ class MtiDevice:
             for odi, rate in config
         )
         self._communicator.send_and_receive(
-            XbusMessageID.OUTPUT_CONFIGURATION,
-            payload=payload,
+            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, payload),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
 
     def output_config(self) -> MtiDeviceOutputConfig:
-        msg: XbusMessage = self._communicator.send_and_receive(
-            XbusMessageID.OUTPUT_CONFIGURATION,
+        message: XbusMessage = self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
         result: MtiDeviceOutputConfig = []
-        for i in range(0, len(msg.payload), 4):
+        for i in range(0, len(message.payload), 4):
             odi: MtData2PacketID = MtData2PacketID(
-                int.from_bytes(msg.payload[i : i + 2], "big")
+                int.from_bytes(message.payload[i : i + 2], "big")
             )
-            rate: int = int.from_bytes(msg.payload[i + 2 : i + 4], "big")
+            rate: int = int.from_bytes(message.payload[i + 2 : i + 4], "big")
             result.append((odi, rate))
         return result
 
     def request_options(self) -> MtiDeviceOptions:
-        msg: XbusMessage = self._communicator.send_and_receive(
-            XbusMessageID.OPTION_FLAGS,
+        message: XbusMessage = self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.OPTION_FLAGS),
             expected_mid=XbusMessageID.OPTION_FLAGS_ACK,
             timeout=self._timeout,
         )
-        return MtiDeviceOptions.from_payload(msg.payload)
+        return MtiDeviceOptions.from_payload(message.payload)
 
     def request_filter_profile(self) -> MtiDeviceFilterProfile:
-        msg: XbusMessage = self._communicator.send_and_receive(
-            XbusMessageID.FILTER_PROFILE,
+        message: XbusMessage = self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.FILTER_PROFILE),
             expected_mid=XbusMessageID.FILTER_PROFILE_ACK,
             timeout=self._timeout,
         )
-        return MtiDeviceFilterProfile.from_payload(msg.payload)
+        return MtiDeviceFilterProfile.from_payload(message.payload)
 
     def request_config(self) -> MtiDeviceConfig:
-        msg: XbusMessage = self._communicator.send_and_receive(
-            XbusMessageID.REQ_CONFIGURATION,
+        message: XbusMessage = self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.REQ_CONFIGURATION),
             expected_mid=XbusMessageID.CONFIGURATION,
             timeout=self._timeout,
         )
-        return MtiDeviceConfig.from_payload(msg.payload)
+        return MtiDeviceConfig.from_payload(message.payload)
 
     # --- Raw comms ---
 
     def send_custom_message(
         self,
-        mid: XbusMessageID,
-        payload: bytes = b"",
-        expected_mid: XbusMessageID | None = None,
+        message: XbusMessage,
+        expected_mid: XbusMessageID,
         timeout: float | None = None,
     ) -> XbusMessage:
         return self._communicator.send_and_receive(
-            mid,
-            payload=payload,
+            message,
             expected_mid=expected_mid,
             timeout=timeout,
         )
@@ -187,7 +185,7 @@ class MtiDevice:
     # --- Internal ---
 
     def _on_message(self, xbus_message: XbusMessage) -> None:
-        msg = MtiMessage(
+        message = MtiMessage(
             header=MtiMessageHeader(
                 device_id=self._device_id,
                 timestamp=datetime.now(tz=timezone.utc),
@@ -195,7 +193,7 @@ class MtiDevice:
             xbus_message=xbus_message,
         )
         with self._buffer_lock:
-            self._buffer.append(msg)
+            self._buffer.append(message)
 
     def _on_reader_error(self, exc: Exception) -> None:
         self._state = MtiDeviceState.CONFIG

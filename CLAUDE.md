@@ -51,6 +51,8 @@ from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
 - **Type checking:** `uv run mypy .`
 - **Tests:** `uv run pytest`
 
+After implementing changes, always run `uv run ruff check .`, `uv run ruff format .`, and `uv run mypy .`.
+
 ### Type hints
 
 Always add type hints to variables, function arguments, and return types. Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.

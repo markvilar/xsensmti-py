@@ -14,6 +14,7 @@ from xsensmti.serial import (
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
+    build_xbus_command,
 )
 from .xbus_reader import XbusStreamReader
 
@@ -45,58 +46,48 @@ class MtiDeviceCommunicator:
     # --- Identity queries ---
 
     def get_device_id(self) -> int:
-        msg: XbusMessage = serial_send_and_receive(
-            self._ser,
-            XbusMessageID.REQ_DEVICE_ID,
+        message: XbusMessage = self.send_and_receive(
+            build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
             expected_mid=XbusMessageID.DEVICE_ID,
-            timeout=self._timeout,
         )
-        return int.from_bytes(msg.payload, "big")
+        return int.from_bytes(message.payload, "big")
 
     def get_product_code(self) -> str:
-        msg: XbusMessage = serial_send_and_receive(
-            self._ser,
-            XbusMessageID.REQ_PRODUCT_CODE,
+        message: XbusMessage = self.send_and_receive(
+            build_xbus_command(XbusMessageID.REQ_PRODUCT_CODE),
             expected_mid=XbusMessageID.PRODUCT_CODE,
-            timeout=self._timeout,
         )
-        return msg.payload.rstrip(b"\x00").decode("ascii", errors="replace")
+        return message.payload.rstrip(b"\x00").decode("ascii", errors="replace")
 
     def get_firmware_version(self) -> str:
-        msg: XbusMessage = serial_send_and_receive(
-            self._ser,
-            XbusMessageID.REQ_FIRMWARE_REVISION,
+        message: XbusMessage = self.send_and_receive(
+            build_xbus_command(XbusMessageID.REQ_FIRMWARE_REVISION),
             expected_mid=XbusMessageID.FIRMWARE_REVISION,
-            timeout=self._timeout,
         )
-        return f"{msg.payload[0]}.{msg.payload[1]}.{msg.payload[2]}"
+        return f"{message.payload[0]}.{message.payload[1]}.{message.payload[2]}"
 
     def get_hardware_version(self) -> str:
-        msg: XbusMessage = serial_send_and_receive(
-            self._ser,
-            XbusMessageID.REQ_HARDWARE_VERSION,
+        message: XbusMessage = self.send_and_receive(
+            build_xbus_command(XbusMessageID.REQ_HARDWARE_VERSION),
             expected_mid=XbusMessageID.HARDWARE_VERSION,
-            timeout=self._timeout,
         )
-        return f"{msg.payload[0]}.{msg.payload[1]}"
+        return f"{message.payload[0]}.{message.payload[1]}"
 
     # --- Communication ---
 
-    def send(self, mid: XbusMessageID, payload: bytes = b"") -> None:
-        send_message(self._ser, mid, payload)
+    def send(self, message: XbusMessage) -> None:
+        send_message(self._ser, message)
 
     def send_and_receive(
         self,
-        mid: XbusMessageID,
-        payload: bytes = b"",
-        expected_mid: XbusMessageID | None = None,
+        message: XbusMessage,
+        expected_mid: XbusMessageID,
         timeout: float | None = None,
     ) -> XbusMessage:
         effective_timeout: float = timeout if timeout is not None else self._timeout
         return serial_send_and_receive(
             self._ser,
-            mid,
-            payload,
+            message,
             expected_mid=expected_mid,
             timeout=effective_timeout,
         )
@@ -105,19 +96,15 @@ class MtiDeviceCommunicator:
 
     def goto_config(self) -> None:
         self._reader.stop()
-        serial_send_and_receive(
-            self._ser,
-            XbusMessageID.GOTOCONFIG,
+        self.send_and_receive(
+            build_xbus_command(XbusMessageID.GOTOCONFIG),
             expected_mid=XbusMessageID.GOTOCONFIG_ACK,
-            timeout=self._timeout,
         )
 
     def goto_measurement(self) -> None:
-        serial_send_and_receive(
-            self._ser,
-            XbusMessageID.GOTOMEASUREMENT,
+        self.send_and_receive(
+            build_xbus_command(XbusMessageID.GOTOMEASUREMENT),
             expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
-            timeout=self._timeout,
         )
         self._reader.start()
 

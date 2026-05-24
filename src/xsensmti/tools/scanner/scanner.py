@@ -18,6 +18,7 @@ from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
+    build_xbus_command,
 )
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import (
@@ -68,14 +69,14 @@ def scan_port(
 
         send_and_receive(
             ser,
-            XbusMessageID.GOTOCONFIG,
+            build_xbus_command(XbusMessageID.GOTOCONFIG),
             expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=opts.timeout,
         )
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
-            XbusMessageID.REQ_DEVICE_ID,
+            build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
             expected_mid=XbusMessageID.DEVICE_ID,
             timeout=opts.timeout,
         )
@@ -85,7 +86,7 @@ def scan_port(
         try:
             product_code_msg: XbusMessage = send_and_receive(
                 ser,
-                XbusMessageID.REQ_PRODUCT_CODE,
+                build_xbus_command(XbusMessageID.REQ_PRODUCT_CODE),
                 expected_mid=XbusMessageID.PRODUCT_CODE,
                 timeout=opts.timeout,
             )
