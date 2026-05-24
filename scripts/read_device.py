@@ -10,7 +10,7 @@ from __future__ import annotations
 import click
 
 from loguru import logger
-from xsensmti.device import MtiDeviceInfo
+from xsensmti.device import MtiDeviceInfo, MtiMessage
 from xsensmti.mtdata2 import (
     MtData2Packet,
     Reading,
@@ -19,7 +19,7 @@ from xsensmti.mtdata2 import (
 )
 from xsensmti.port import MtiPortInfo
 from xsensmti.session import MtiSession
-from xsensmti.xbus import XbusMessage, XbusMessageID
+from xsensmti.xbus import XbusMessageID
 
 
 @click.command()
@@ -51,22 +51,23 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
 
         received: int = 0
 
-        def on_message(device_info: MtiDeviceInfo, message: XbusMessage) -> None:
+        def on_message(message: MtiMessage) -> None:
             nonlocal received
-            if message.header.mid != XbusMessageID.MTDATA2:
+            if message.xbus_message.header.mid != XbusMessageID.MTDATA2:
                 return
 
-            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(message)
+            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(message.xbus_message)
             readings: list[Reading] = []
-            for pkt in packets:
+            for packet in packets:
                 try:
-                    readings.append(decode_reading(pkt))
+                    readings.append(decode_reading(packet))
                 except Exception:
                     pass
 
             if readings:
+                timestamp: str = message.header.timestamp.isoformat()
                 summary: str = "  ".join(_format_reading(r) for r in readings)
-                click.echo(f"[{received}] {summary}")
+                click.echo(f"[{received}] {timestamp}  {summary}")
 
             received += 1
 

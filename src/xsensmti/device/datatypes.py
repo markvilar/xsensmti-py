@@ -5,7 +5,8 @@ Data types for MtiDevice state and configuration responses.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 
 from xsensmti.mtdata2 import MtData2PacketID
@@ -27,7 +28,23 @@ class MtiDeviceInfo:
     is_usb: bool = False
 
 
-type MessageCallback = Callable[[MtiDeviceInfo, XbusMessage], None]
+@dataclass(frozen=True)
+class MtiMessageHeader:
+    """Receipt metadata for a single Xbus message."""
+
+    device_info: MtiDeviceInfo
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+
+
+@dataclass(frozen=True)
+class MtiMessage:
+    """A received Xbus message together with its receipt metadata."""
+
+    header: MtiMessageHeader
+    xbus_message: XbusMessage
+
+
+type MessageCallback = Callable[[MtiMessage], None]
 
 
 class MtiDeviceState(IntEnum):

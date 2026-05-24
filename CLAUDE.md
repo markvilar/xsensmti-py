@@ -149,6 +149,10 @@ XSens product documentation is available under `docs/xsens/`:
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
 
+## GitHub issues
+
+When writing GitHub issue bodies via `gh issue create` or `gh issue edit`, use bare backticks (`` ` ``) for inline code and code fences. Do **not** escape them as `` \` `` — the shell heredoc passes the body verbatim to the API and escaped backticks will appear literally in the rendered issue.
+
 ## Device interaction
 
 When working with a physical XSens MTi sensor on `/dev/ttyUSB0`:

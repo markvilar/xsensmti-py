@@ -8,6 +8,7 @@ import threading
 import serial
 
 from collections import deque
+from datetime import datetime, timezone
 from loguru import logger
 from xsensmti.serial import send_and_receive
 from xsensmti.mtdata2 import MtData2PacketID
@@ -23,6 +24,8 @@ from .datatypes import (
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
     MtiDeviceState,
+    MtiMessage,
+    MtiMessageHeader,
 )
 from .xbus_reader import XbusStreamReader
 
@@ -42,7 +45,7 @@ class MtiDevice:
         self._state_value: MtiDeviceState = MtiDeviceState.CONFIG
         self._on_message_callback: MessageCallback | None = None
         self._callback_lock: threading.Lock = threading.Lock()
-        self._buffer: deque[XbusMessage] = deque(maxlen=buffer_size)
+        self._buffer: deque[MtiMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
         self._reader: XbusStreamReader = XbusStreamReader(
             ser=self._ser,
@@ -103,7 +106,7 @@ class MtiDevice:
             callback = self._on_message_callback
         if callback is not None:
             for message in messages:
-                callback(self._device_info, message)
+                callback(message)
 
     def goto_config(self) -> None:
         self._reader.stop()
@@ -248,9 +251,16 @@ class MtiDevice:
 
     # --- Internal ---
 
-    def _on_message(self, message: XbusMessage) -> None:
+    def _on_message(self, xbus_message: XbusMessage) -> None:
+        msg = MtiMessage(
+            header=MtiMessageHeader(
+                device_info=self._device_info,
+                timestamp=datetime.now(tz=timezone.utc),
+            ),
+            xbus_message=xbus_message,
+        )
         with self._buffer_lock:
-            self._buffer.append(message)
+            self._buffer.append(msg)
 
     def _on_reader_error(self, exc: Exception) -> None:
         self._state = MtiDeviceState.CONFIG
