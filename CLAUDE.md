@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A minimal Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols.
+A Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols, and device communication and control.
 
 ## Skills
 
@@ -51,13 +51,15 @@ from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
 - **Type checking:** `uv run mypy .`
 - **Tests:** `uv run pytest`
 
+After implementing changes, always run `uv run ruff check .`, `uv run ruff format .`, and `uv run mypy .`.
+
 ### Type hints
 
 Always add type hints to variables, function arguments, and return types. Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
 
 ### Variable names
 
-Prefer not to use single- or two-character abbreviations for variable names, as descriptive names make the code more readable. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
+Prefer full words over abbreviations for variable names — use `message` not `msg`, `packet` not `pkt`, `result` not `res`, `error` not `err`, `config` not `cfg`, and so on. This applies to names of any length; three-character abbreviations are just as discouraged as one- or two-character ones. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
 
 ### Docstrings
 
@@ -140,6 +142,8 @@ All data types across both modules use `@dataclass(frozen=True)` — follow this
 The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer()` → `XbusMessage` list → parse payload as `OutputDataPacket` using `OutputDataIdentifier`.
 
 ## Documentation
+
+The XSens MT SDK (C++) is available at https://github.com/markvilar/xsens-sdk — useful for understanding the reference architecture (`XsControl`, `XsDevice`, `XsCallback`, `XsDataPacket`) when making design decisions for this library.
 
 XSens product documentation is available under `docs/xsens/`:
 

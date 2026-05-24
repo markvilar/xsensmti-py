@@ -10,7 +10,7 @@ from __future__ import annotations
 import click
 
 from loguru import logger
-from xsensmti.device import MtiDeviceInfo, MtiMessage
+from xsensmti.device import MtiDeviceID, MtiMessage
 from xsensmti.mtdata2 import (
     MtData2Packet,
     Reading,
@@ -18,7 +18,7 @@ from xsensmti.mtdata2 import (
     decode_reading,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.session import MtiSession
+from xsensmti.device import MtiSession
 from xsensmti.xbus import XbusMessageID
 
 
@@ -42,7 +42,7 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
-        info: MtiDeviceInfo = device.device_info()
+        info: MtiDeviceID = device.device_id()
         logger.info(
             f"Device ID: {info.device_id:#010x}  "
             f"Product: {info.product_code or '(unknown)'}  "
@@ -56,7 +56,9 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
             if message.xbus_message.header.mid != XbusMessageID.MTDATA2:
                 return
 
-            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(message.xbus_message)
+            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(
+                message.xbus_message
+            )
             readings: list[Reading] = []
             for packet in packets:
                 try:

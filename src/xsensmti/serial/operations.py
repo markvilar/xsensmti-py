@@ -10,6 +10,7 @@ import serial
 from loguru import logger
 from xsensmti.xbus import (
     XbusMessageID,
+    build_xbus_command,
     iter_xbus_messages_from_buffer,
     IncompletePayload,
     InvalidPayloadLength,
@@ -39,7 +40,7 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
     try:
         send_and_receive(
             ser,
-            XbusMessageID.GOTOCONFIG,
+            build_xbus_command(XbusMessageID.GOTOCONFIG),
             expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=timeout,
         )
@@ -51,7 +52,7 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
 
     try:
         ser.reset_input_buffer()
-        send_message(ser, XbusMessageID.RESET)
+        send_message(ser, build_xbus_command(XbusMessageID.RESET))
         ser.flush()
     except (serial.SerialException, OSError):
         pass
@@ -61,7 +62,7 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
 
     while time.monotonic() < deadline:
         try:
-            send_message(ser, XbusMessageID.GOTOCONFIG)
+            send_message(ser, build_xbus_command(XbusMessageID.GOTOCONFIG))
             ser.flush()
         except (serial.SerialException, OSError):
             pass
@@ -104,7 +105,7 @@ def goto_measurement_mode(ser: serial.Serial, timeout: float) -> None:
     """Transition the device to measurement mode."""
     send_and_receive(
         ser,
-        XbusMessageID.GOTOMEASUREMENT,
+        build_xbus_command(XbusMessageID.GOTOMEASUREMENT),
         expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
         timeout=timeout,
     )
