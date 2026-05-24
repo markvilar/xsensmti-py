@@ -57,7 +57,7 @@ Always add type hints to variables, function arguments, and return types. Use th
 
 ### Variable names
 
-Prefer not to use single- or two-character abbreviations for variable names, as descriptive names make the code more readable. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
+Prefer full words over abbreviations for variable names — use `message` not `msg`, `packet` not `pkt`, `result` not `res`, `error` not `err`, `config` not `cfg`, and so on. This applies to names of any length; three-character abbreviations are just as discouraged as one- or two-character ones. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
 
 ### Docstrings
 
