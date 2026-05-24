@@ -18,7 +18,7 @@ from xsensmti.mtdata2 import (
     decode_reading,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.session import MtiSession
+from xsensmti.device import MtiSession
 from xsensmti.xbus import XbusMessageID
 
 
@@ -56,7 +56,9 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
             if message.xbus_message.header.mid != XbusMessageID.MTDATA2:
                 return
 
-            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(message.xbus_message)
+            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(
+                message.xbus_message
+            )
             readings: list[Reading] = []
             for packet in packets:
                 try:

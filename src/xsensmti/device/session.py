@@ -8,11 +8,9 @@ from types import TracebackType
 from loguru import logger
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import open_serial_port
-from xsensmti.device import (
-    MtiDevice,
-    MtiDeviceCommunicator,
-    MtiDeviceID,
-)
+from .communicator import MtiDeviceCommunicator
+from .datatypes import MtiDeviceID
+from .device import MtiDevice
 
 
 class MtiSession:

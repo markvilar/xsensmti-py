@@ -21,7 +21,7 @@ from xsensmti.device import (
     MtiDeviceOutputConfig,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.session import MtiSession
+from xsensmti.device import MtiSession
 
 
 @click.command()
