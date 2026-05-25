@@ -6,7 +6,6 @@ from .decode import (
     decode_xbus_messages_from_buffer as decode_xbus_messages_from_buffer,
     drain_xbus_messages as drain_xbus_messages,
     is_frame_checksum_valid as is_frame_checksum_valid,
-    is_message_checksum_valid as is_message_checksum_valid,
     iter_xbus_messages_from_buffer as iter_xbus_messages_from_buffer,
 )
 from .datatypes import (
@@ -26,6 +25,10 @@ from .exceptions import (
     MissingChecksum as MissingChecksum,
     MissingHeader as MissingHeader,
 )
-from .encode import encode_xbus_message as encode_xbus_message
+from .encode import (
+    build_xbus_command as build_xbus_command,
+    build_xbus_message as build_xbus_message,
+    encode_xbus_message as encode_xbus_message,
+)
 
 __all__ = []

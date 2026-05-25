@@ -4,16 +4,12 @@ Unit tests for Xbus checksum validation functions.
 
 from __future__ import annotations
 
-import pytest
-
 from xsensmti.xbus import (
     XbusMessageID,
     XbusFraming,
     XbusMessageHeader,
     XbusMessage,
     is_frame_checksum_valid,
-    is_message_checksum_valid,
-    InvalidPayloadLength,
 )
 
 
@@ -82,16 +78,16 @@ class TestIsFrameChecksumValid:
         assert is_frame_checksum_valid(bytes(frame)) is False
 
 
-class TestIsMessageChecksumValid:
+class TestIsChecksumValid:
     def test_valid_standard_message(self) -> None:
         frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x10\x20")
         message = _parse_standard_message(frame)
-        assert is_message_checksum_valid(message) is True
+        assert message.is_checksum_valid() is True
 
     def test_valid_extended_message(self) -> None:
         frame = _make_extended_frame(0xFF, XbusMessageID.MTDATA2, b"\xab" * 300)
         message = _parse_extended_message(frame)
-        assert is_message_checksum_valid(message) is True
+        assert message.is_checksum_valid() is True
 
     def test_invalid_when_checksum_field_is_wrong(self) -> None:
         frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01")
@@ -101,7 +97,7 @@ class TestIsMessageChecksumValid:
             payload=message.payload,
             checksum=message.checksum ^ 0x01,
         )
-        assert is_message_checksum_valid(tampered) is False
+        assert tampered.is_checksum_valid() is False
 
     def test_invalid_when_payload_byte_is_corrupted(self) -> None:
         frame = _make_standard_frame(0xFF, XbusMessageID.MTDATA2, b"\x01\x02")
@@ -111,9 +107,9 @@ class TestIsMessageChecksumValid:
             payload=bytes([message.payload[0] ^ 0xFF]) + message.payload[1:],
             checksum=message.checksum,
         )
-        assert is_message_checksum_valid(tampered) is False
+        assert tampered.is_checksum_valid() is False
 
-    def test_raises_when_extended_header_has_no_ext_length(self) -> None:
+    def test_returns_false_when_extended_header_has_no_ext_length(self) -> None:
         header = XbusMessageHeader(
             preamble=XbusFraming.PREAMBLE,
             bid=0xFF,
@@ -122,5 +118,4 @@ class TestIsMessageChecksumValid:
             ext_length=None,
         )
         message = XbusMessage(header=header, payload=b"", checksum=0x00)
-        with pytest.raises(InvalidPayloadLength):
-            is_message_checksum_valid(message)
+        assert message.is_checksum_valid() is False

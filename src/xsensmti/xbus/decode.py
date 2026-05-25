@@ -28,33 +28,6 @@ def is_frame_checksum_valid(frame: bytes) -> bool:
     return (sum(frame[1:]) & 0xFF) == 0
 
 
-def is_message_checksum_valid(message: XbusMessage) -> bool:
-    """
-    Return True if a parsed Xbus message has a valid checksum.
-
-    According to the Xbus protocol the following must hold:
-     - The low byte of the sum of all bytes except the preamble must be zero.
-    """
-    header: XbusMessageHeader = message.header
-
-    data: list[int] = [
-        header.bid,
-        header.mid,
-        header.length,
-    ]
-
-    if header.is_extended_message():
-        if header.ext_length is None:
-            raise InvalidPayloadLength("extended message header is missing ext_length")
-        data.append((header.ext_length >> 8) & 0xFF)
-        data.append(header.ext_length & 0xFF)
-
-    data.extend(message.payload)
-    data.append(message.checksum)
-
-    return (sum(data) & 0xFF) == 0
-
-
 def decode_xbus_messages_from_buffer(buffer: bytes | bytearray) -> list[XbusMessage]:
     """
     Decode all Xbus messages found in a buffer.
@@ -85,7 +58,7 @@ def iter_xbus_messages_from_buffer(buffer: bytes | bytearray) -> Iterator[XbusMe
         frame: bytes = bytes(remaining[: header.frame_length])
         message: XbusMessage = _parse_message_from_header_and_frame(header, frame)
 
-        if is_message_checksum_valid(message):
+        if message.is_checksum_valid():
             yield message
             del remaining[: message.header.frame_length]
         else:
@@ -140,7 +113,7 @@ def drain_xbus_messages(buffer: bytearray) -> list[XbusMessage]:
             offset += 1
             continue
 
-        if is_message_checksum_valid(message):
+        if message.is_checksum_valid():
             messages.append(message)
             offset += header.frame_length
         else:

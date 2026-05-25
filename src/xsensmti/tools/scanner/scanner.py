@@ -18,6 +18,7 @@ from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
+    build_xbus_command,
 )
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import (
@@ -39,12 +40,21 @@ class ScanOptions:
     timeout: float = 2.0
 
 
+@dataclass(frozen=True)
+class MtiScanResult:
+    """A detected MTi device with its connection parameters and queried identity."""
+
+    port_info: MtiPortInfo
+    device_id: int
+    product_code: str
+
+
 def scan_port(
     port: str,
     options: ScanOptions | None = None,
     vid: int | None = None,
     pid: int | None = None,
-) -> MtiPortInfo | None:
+) -> MtiScanResult | None:
     """
     Probe a single serial port and return a ScanResult if an MTi device is found.
 
@@ -59,14 +69,14 @@ def scan_port(
 
         send_and_receive(
             ser,
-            XbusMessageID.GOTOCONFIG,
+            build_xbus_command(XbusMessageID.GOTOCONFIG),
             expected_mid=XbusMessageID.GOTOCONFIG_ACK,
             timeout=opts.timeout,
         )
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
-            XbusMessageID.REQ_DEVICE_ID,
+            build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
             expected_mid=XbusMessageID.DEVICE_ID,
             timeout=opts.timeout,
         )
@@ -76,7 +86,7 @@ def scan_port(
         try:
             product_code_msg: XbusMessage = send_and_receive(
                 ser,
-                XbusMessageID.REQ_PRODUCT_CODE,
+                build_xbus_command(XbusMessageID.REQ_PRODUCT_CODE),
                 expected_mid=XbusMessageID.PRODUCT_CODE,
                 timeout=opts.timeout,
             )
@@ -86,13 +96,10 @@ def scan_port(
         except (CommandTimeout, UnexpectedResponse):
             pass
 
-        return MtiPortInfo(
-            port=port,
-            baud=opts.baud,
+        return MtiScanResult(
+            port_info=MtiPortInfo(port=port, baud=opts.baud, vid=vid, pid=pid),
             device_id=device_id,
             product_code=product_code,
-            vid=vid,
-            pid=pid,
         )
 
     except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
@@ -110,7 +117,7 @@ def scan_ports(
     baud: int = 115200,
     timeout: float = 2.0,
     usb_only: bool = False,
-) -> list[MtiPortInfo]:
+) -> list[MtiScanResult]:
     """
     Probe all available serial ports and return found MTi devices.
     """
@@ -122,7 +129,7 @@ def scan_ports(
     opts: ScanOptions = ScanOptions(baud=baud, timeout=timeout)
 
     with ThreadPoolExecutor() as executor:
-        futures: list[Future[MtiPortInfo | None]] = [
+        futures: list[Future[MtiScanResult | None]] = [
             executor.submit(scan_port, port.device, opts, port.vid, port.pid)
             for port in ports
         ]

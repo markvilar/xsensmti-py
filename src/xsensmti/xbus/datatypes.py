@@ -186,3 +186,55 @@ class XbusMessage:
     header: XbusMessageHeader
     payload: bytes
     checksum: int
+
+    def to_bytes(self) -> bytes:
+        """
+        Serialize the message to a complete Xbus frame ready for transmission.
+
+        Returns
+        -------
+        A bytes object containing the full wire-format frame: preamble, header,
+        payload, and checksum.
+        """
+        if self.header.is_extended_message():
+            ext_length: int = self.header.ext_length or 0
+            body: bytes = (
+                bytes(
+                    [
+                        self.header.bid,
+                        int(self.header.mid),
+                        int(XbusFraming.EXTLEN),
+                        (ext_length >> 8) & 0xFF,
+                        ext_length & 0xFF,
+                    ]
+                )
+                + self.payload
+            )
+        else:
+            body = (
+                bytes([self.header.bid, int(self.header.mid), self.header.length])
+                + self.payload
+            )
+        return bytes([int(XbusFraming.PREAMBLE)]) + body + bytes([self.checksum])
+
+    def is_checksum_valid(self) -> bool:
+        """
+        Return True if the message checksum is valid.
+
+        According to the Xbus protocol, the low byte of the sum of all bytes
+        excluding the preamble (BID + MID + LEN + [EXT LEN] + DATA + CHECKSUM)
+        must equal zero.
+        """
+        data: list[int] = [
+            self.header.bid,
+            int(self.header.mid),
+            self.header.length,
+        ]
+        if self.header.is_extended_message():
+            if self.header.ext_length is None:
+                return False
+            data.append((self.header.ext_length >> 8) & 0xFF)
+            data.append(self.header.ext_length & 0xFF)
+        data.extend(self.payload)
+        data.append(self.checksum)
+        return (sum(data) & 0xFF) == 0

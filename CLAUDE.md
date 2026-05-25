@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A minimal Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols.
+A Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols, and device communication and control.
 
 ## Skills
 
@@ -51,13 +51,15 @@ from xsensmti.xbus.datatypes import XbusMessage, XbusMessageID
 - **Type checking:** `uv run mypy .`
 - **Tests:** `uv run pytest`
 
+After implementing changes, always run `uv run ruff check .`, `uv run ruff format .`, and `uv run mypy .`.
+
 ### Type hints
 
 Always add type hints to variables, function arguments, and return types. Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
 
 ### Variable names
 
-Prefer not to use single- or two-character abbreviations for variable names, as descriptive names make the code more readable. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
+Prefer full words over abbreviations for variable names — use `message` not `msg`, `packet` not `pkt`, `result` not `res`, `error` not `err`, `config` not `cfg`, and so on. This applies to names of any length; three-character abbreviations are just as discouraged as one- or two-character ones. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).
 
 ### Docstrings
 
@@ -141,6 +143,8 @@ The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer
 
 ## Documentation
 
+The XSens MT SDK (C++) is available at https://github.com/markvilar/xsens-sdk — useful for understanding the reference architecture (`XsControl`, `XsDevice`, `XsCallback`, `XsDataPacket`) when making design decisions for this library.
+
 XSens product documentation is available under `docs/xsens/`:
 
 - `xsens_mti_family_reference_manual.pdf` — MTi family reference manual
@@ -148,6 +152,10 @@ XSens product documentation is available under `docs/xsens/`:
 - `xsens_mti_600_series_user_manual.pdf` — MTi 600-series (includes MTi 700) user manual
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
+
+## GitHub issues
+
+When writing GitHub issue bodies via `gh issue create` or `gh issue edit`, use bare backticks (`` ` ``) for inline code and code fences. Do **not** escape them as `` \` `` — the shell heredoc passes the body verbatim to the API and escaped backticks will appear literally in the rendered issue.
 
 ## Device interaction
 

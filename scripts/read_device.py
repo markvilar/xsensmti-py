@@ -10,15 +10,16 @@ from __future__ import annotations
 import click
 
 from loguru import logger
+from xsensmti.device import MtiDeviceID, MtiMessage
 from xsensmti.mtdata2 import (
-    OutputDataPacket,
+    MtData2Packet,
     Reading,
     decode_mtdata2_packets_from_message,
     decode_reading,
 )
 from xsensmti.port import MtiPortInfo
-from xsensmti.session import MtiSession
-from xsensmti.xbus import XbusMessage
+from xsensmti.device import MtiSession
+from xsensmti.xbus import XbusMessageID
 
 
 @click.command()
@@ -41,37 +42,44 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
+        info: MtiDeviceID = device.device_id()
         logger.info(
-            f"Device ID: {device.device_id():#010x}  "
-            f"Product: {device.product_code() or '(unknown)'}  "
-            f"FW: {device.firmware_version()}  HW: {device.hardware_version()}"
+            f"Device ID: {info.device_id:#010x}  "
+            f"Product: {info.product_code or '(unknown)'}  "
+            f"FW: {info.firmware_version}  HW: {info.hardware_version}"
         )
 
+        received: int = 0
+
+        def on_message(message: MtiMessage) -> None:
+            nonlocal received
+            if message.xbus_message.header.mid != XbusMessageID.MTDATA2:
+                return
+
+            packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(
+                message.xbus_message
+            )
+            readings: list[Reading] = []
+            for packet in packets:
+                try:
+                    readings.append(decode_reading(packet))
+                except Exception:
+                    pass
+
+            if readings:
+                timestamp: str = message.header.timestamp.isoformat()
+                summary: str = "  ".join(_format_reading(r) for r in readings)
+                click.echo(f"[{received}] {timestamp}  {summary}")
+
+            received += 1
+
+        device.set_on_message(on_message)
         device.goto_measurement()
         logger.info("Streaming — press Ctrl-C to stop.")
 
-        received: int = 0
         try:
             while count == 0 or received < count:
-                msg: XbusMessage | None = device.take_first_data_packet_in_queue()
-                if msg is None:
-                    continue
-
-                packets: list[OutputDataPacket] = decode_mtdata2_packets_from_message(
-                    msg
-                )
-                readings: list[Reading] = []
-                for pkt in packets:
-                    try:
-                        readings.append(decode_reading(pkt))
-                    except Exception:
-                        pass
-
-                if readings:
-                    summary: str = "  ".join(_format_reading(r) for r in readings)
-                    click.echo(f"[{received}] {summary}")
-
-                received += 1
+                device.update()
         except KeyboardInterrupt:
             pass
 

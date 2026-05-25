@@ -13,6 +13,7 @@ from loguru import logger
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
+    build_xbus_command,
 )
 from xsensmti.serial import (
     goto_config_mode,
@@ -57,7 +58,7 @@ def record_device(
 
         device_id_msg: XbusMessage = send_and_receive(
             ser,
-            XbusMessageID.REQ_DEVICE_ID,
+            build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
             expected_mid=XbusMessageID.DEVICE_ID,
             timeout=timeout,
         )
@@ -66,7 +67,7 @@ def record_device(
 
         send_and_receive(
             ser,
-            XbusMessageID.GOTOMEASUREMENT,
+            build_xbus_command(XbusMessageID.GOTOMEASUREMENT),
             expected_mid=XbusMessageID.GOTOMEASUREMENT_ACK,
             timeout=timeout,
         )

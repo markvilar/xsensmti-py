@@ -10,7 +10,6 @@ import serial
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
-    encode_xbus_message,
     iter_xbus_messages_from_buffer,
     IncompletePayload,
     InvalidPayloadLength,
@@ -51,12 +50,10 @@ def open_serial_port(
 
 def send_message(
     ser: serial.Serial,
-    mid: XbusMessageID | int,
-    payload: bytes = b"",
-    bid: int = 0xFF,
+    message: XbusMessage,
 ) -> None:
-    """Encode and write one Xbus frame to the serial port."""
-    ser.write(encode_xbus_message(mid, payload, bid))
+    """Write one Xbus frame to the serial port."""
+    ser.write(message.to_bytes())
 
 
 def receive_message(
@@ -108,20 +105,10 @@ def receive_message(
 
 def send_and_receive(
     ser: serial.Serial,
-    mid: XbusMessageID | int,
-    payload: bytes = b"",
-    expected_mid: XbusMessageID | None = None,
+    message: XbusMessage,
+    expected_mid: XbusMessageID,
     timeout: float = 2.0,
-    bid: int = 0xFF,
 ) -> XbusMessage:
-    """
-    Send an Xbus message and wait for its acknowledgement.
-
-    If expected_mid is not given, derives it as mid + 1 (the standard ACK
-    convention used throughout the Xbus protocol).
-    """
-    if expected_mid is None:
-        expected_mid = XbusMessageID(int(mid) + 1)
-
-    send_message(ser, mid, payload, bid)
+    """Send an Xbus message and wait for its acknowledgement."""
+    send_message(ser, message)
     return receive_message(ser, expected_mid, timeout)

@@ -50,3 +50,7 @@ class ConfigurationError(XsensError):
         self.mid = mid
         self.detail = detail
         super().__init__(f"configuration failed for MID {int(mid):#04x}: {detail}")
+
+
+class UnexpectedXbusMessage(XsensError):
+    """Raised when an XbusMessage has a MID that is not valid in the current context."""

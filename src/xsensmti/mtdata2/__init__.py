@@ -8,32 +8,41 @@ from .decode import (
     iter_mtdata2_packets_from_payload as iter_mtdata2_packets_from_payload,
 )
 from .datatypes import (
-    OutputDataIdentifier as OutputDataIdentifier,
-    OutputDataPacket as OutputDataPacket,
+    MtData2PacketID as MtData2PacketID,
+    MtData2Packet as MtData2Packet,
 )
+from xsensmti.exceptions import UnexpectedXbusMessage as UnexpectedXbusMessage
 from .exceptions import (
     InvalidReadingData as InvalidReadingData,
-    NotMTData2Message as NotMTData2Message,
     TruncatedPacket as TruncatedPacket,
 )
 from .reading_decode import (
     ReadingDecoder as ReadingDecoder,
+    decode_all_readings as decode_all_readings,
     decode_reading as decode_reading,
 )
 from .readings import (
     Acceleration as Acceleration,
     AltitudeEllipsoid as AltitudeEllipsoid,
+    BaroPressure as BaroPressure,
+    DeltaQ as DeltaQ,
     DeltaV as DeltaV,
+    FreeAcceleration as FreeAcceleration,
     GnssPvt as GnssPvt,
     MagneticField as MagneticField,
     OrientationEuler as OrientationEuler,
     OrientationQuaternion as OrientationQuaternion,
     PacketCounter as PacketCounter,
+    PositionEcef as PositionEcef,
     PositionLLEllipsoid as PositionLLEllipsoid,
     RateOfTurn as RateOfTurn,
     Reading as Reading,
     SampleTimeFine as SampleTimeFine,
+    StatusByte as StatusByte,
     StatusWord as StatusWord,
+    Temperature as Temperature,
+    UnknownReading as UnknownReading,
+    UtcTime as UtcTime,
     VelocityNed as VelocityNed,
 )
 
