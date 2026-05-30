@@ -6,6 +6,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Python library for working with XSens MTi sensors, implementing the Xbus and MTData2 binary communication protocols, and device communication and control.
 
+## Behavioral guidelines
+
+These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+### Think before coding
+
+Before implementing, state assumptions explicitly — if uncertain, ask. If multiple interpretations exist, present them rather than picking silently. If a simpler approach exists, say so. If something is unclear, stop, name what's confusing, and ask.
+
+### Simplicity first
+
+Write the minimum code that solves the problem. No features beyond what was asked, no abstractions for single-use code, no unrequested flexibility or configurability, no error handling for impossible scenarios. If 200 lines could be 50, rewrite it.
+
+### Surgical changes
+
+Touch only what the request requires. Don't improve adjacent code, comments, or formatting. Don't refactor things that aren't broken. Match existing style. If unrelated dead code is noticed, mention it — don't delete it. Remove imports, variables, and functions that your changes made unused, but leave pre-existing dead code alone unless asked. Every changed line should trace directly to the user's request.
+
+### Goal-driven execution
+
+Transform tasks into verifiable goals before starting:
+
+- "Add validation" → write tests for invalid inputs, then make them pass
+- "Fix the bug" → write a test that reproduces it, then make it pass
+- "Refactor X" → ensure tests pass before and after
+
+For multi-step tasks, state a brief plan with a verification check per step.
+
 ## Skills
 
 When developing Python code in this project, use these skills at the appropriate moments:
@@ -63,7 +89,7 @@ Prefer full words over abbreviations for variable names — use `message` not `m
 
 ### Docstrings
 
-Under "Arguments" and "Returns" section headers, add a line of hyphens and do not indent the descriptions.
+Under "Arguments", "Returns", and "Attributes" section headers, add a line of hyphens and do not indent the descriptions.
 
 ```python
 def send_and_receive(
@@ -84,6 +110,21 @@ def send_and_receive(
     -------
     The first matching XbusMessage received before the deadline.
     """
+
+
+@dataclass(frozen=True)
+class XbusMessage:
+    """
+    A parsed Xbus protocol message.
+
+    Attributes
+    ----------
+    mid: Message identifier.
+    payload: Raw payload bytes.
+    """
+
+    mid: XbusMessageID
+    payload: bytes
 ```
 
 ### Multi-item imports
