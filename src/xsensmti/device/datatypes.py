@@ -16,7 +16,7 @@ type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
 @dataclass(frozen=True)
-class MtiDeviceID:
+class MtiDeviceInfo:
     """Identifier for a MTi device."""
 
     device_id: int
@@ -29,7 +29,7 @@ class MtiDeviceID:
 class MtiMessageHeader:
     """Receipt metadata for a single Xbus message."""
 
-    device_id: MtiDeviceID
+    device_id: MtiDeviceInfo
     timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
 
 

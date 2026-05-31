@@ -9,7 +9,7 @@ from loguru import logger
 from xsensmti.port import MtiPortInfo
 from xsensmti.serial import open_serial_port
 from .communicator import MtiDeviceCommunicator
-from .datatypes import MtiDeviceID
+from .datatypes import MtiDeviceInfo
 from .device import MtiDevice
 
 
@@ -33,7 +33,7 @@ class MtiSession:
         )
         communicator.goto_config()
 
-        device_id: MtiDeviceID = MtiDeviceID(
+        device_id: MtiDeviceInfo = MtiDeviceInfo(
             device_id=communicator.get_device_id(),
             product_code=communicator.get_product_code(),
             firmware_version=communicator.get_firmware_version(),

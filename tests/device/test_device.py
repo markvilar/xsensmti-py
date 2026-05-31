@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 from xsensmti.device import (
     MtiDevice,
     MtiDeviceCommunicator,
-    MtiDeviceID,
+    MtiDeviceInfo,
     MtiMessage,
     MtiMessageHeader,
 )
@@ -45,7 +45,7 @@ def _parse_message(mid: XbusMessageID, payload: bytes = b"") -> XbusMessage:
 
 def _make_device() -> MtiDevice:
     communicator = MagicMock(spec=MtiDeviceCommunicator)
-    device_id = MtiDeviceID(
+    device_id = MtiDeviceInfo(
         device_id=0x12345678,
         product_code="MTi-700",
         firmware_version="1.0.0",
