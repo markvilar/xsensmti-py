@@ -1,7 +1,7 @@
 [project]
 name = "xsensmti"
-version = "0.1.0"
-description = "A minimal python library for working with XSens MTi sensors."
+version = "0.2.0"
+description = "A python library for working with XSens MTi sensors."
 readme = "README.md"
 authors = [
     { name = "Martin Kvisvik Larsen", email = "martin.kvisvik.larsen@hotmail.com" }
