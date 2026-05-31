@@ -194,6 +194,10 @@ XSens product documentation is available under `docs/xsens/`:
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
 
+### Definition order
+
+Keep public classes and functions closer to the top of the file, and private classes and functions further down. This is safe in Python since function bodies are resolved at call time, not definition time.
+
 ### Dictionary initialization
 
 Use `dict()` rather than `{}` to initialize empty dictionaries. The `C408` ruff rule is not enabled in this project.

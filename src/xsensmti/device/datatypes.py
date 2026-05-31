@@ -12,6 +12,7 @@ from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import XbusMessage
 
 
+type MtiDeviceID = int
 type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
