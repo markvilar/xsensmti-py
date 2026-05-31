@@ -4,7 +4,6 @@ Data types for MtiDevice state and configuration responses.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
@@ -40,9 +39,6 @@ class MtiMessage:
 
     header: MtiMessageHeader
     xbus_message: XbusMessage
-
-
-type MessageCallback = Callable[[MtiMessage], None]
 
 
 class MtiDeviceState(IntEnum):

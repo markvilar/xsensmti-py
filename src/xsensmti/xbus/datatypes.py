@@ -187,6 +187,10 @@ class XbusMessage:
     payload: bytes
     checksum: int
 
+    @property
+    def mid(self) -> XbusMessageID:
+        return self.header.mid
+
     def to_bytes(self) -> bytes:
         """
         Serialize the message to a complete Xbus frame ready for transmission.
