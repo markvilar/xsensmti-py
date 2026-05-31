@@ -10,7 +10,7 @@ from __future__ import annotations
 import click
 
 from loguru import logger
-from xsensmti.device import MtiDeviceID, MtiMessage
+from xsensmti.device import MtiDeviceInfo, MtiMessage
 from xsensmti.mtdata2 import (
     MtData2Packet,
     Reading,
@@ -42,7 +42,7 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
-        info: MtiDeviceID = device.device_id()
+        info: MtiDeviceInfo = device.device_id()
         logger.info(
             f"Device ID: {info.device_id:#010x}  "
             f"Product: {info.product_code or '(unknown)'}  "

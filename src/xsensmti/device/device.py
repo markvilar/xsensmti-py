@@ -24,7 +24,7 @@ from .communicator import MtiDeviceCommunicator
 from .datatypes import (
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
-    MtiDeviceID,
+    MtiDeviceInfo,
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
     MtiDeviceState,
@@ -34,20 +34,21 @@ from .datatypes import (
 
 
 type MessageCallback = Callable[[MtiMessage], None]
-type ReadingType = type[Reading]
 type ReadingCallback[T: Reading] = Callable[[MtiMessageHeader, T], None]
+
+type ReadingType = type[Reading]
 type ReadingCallbackRegistry = dict[ReadingType, ReadingCallback[Reading]]
 
 
 class MtiDevice:
     def __init__(
         self,
-        device_id: MtiDeviceID,
+        device_id: MtiDeviceInfo,
         communicator: MtiDeviceCommunicator,
         timeout: float = 5.0,
         buffer_size: int = 100,
     ) -> None:
-        self._device_id: MtiDeviceID = device_id
+        self._device_id: MtiDeviceInfo = device_id
         self._communicator: MtiDeviceCommunicator = communicator
         self._timeout: float = timeout
         self._state_lock: threading.Lock = threading.Lock()
@@ -72,7 +73,7 @@ class MtiDevice:
 
     # --- Identity ---
 
-    def device_id(self) -> MtiDeviceID:
+    def device_id(self) -> MtiDeviceInfo:
         return self._device_id
 
     # --- State ---

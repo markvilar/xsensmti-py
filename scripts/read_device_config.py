@@ -16,7 +16,7 @@ from loguru import logger
 from xsensmti.device import (
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
-    MtiDeviceID,
+    MtiDeviceInfo,
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
 )
@@ -38,7 +38,7 @@ def main(port: str, baud: int, timeout: float) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
-        info: MtiDeviceID = device.device_id()
+        info: MtiDeviceInfo = device.device_id()
         logger.info(
             f"Connected: {info.product_code or '(unknown)'}  "
             f"ID: {info.device_id:#010x}  "
@@ -51,7 +51,7 @@ def main(port: str, baud: int, timeout: float) -> None:
         _print_options(device.request_options())
 
 
-def _print_identity(info: MtiDeviceID) -> None:
+def _print_identity(info: MtiDeviceInfo) -> None:
     click.echo("\n--- Device ---")
     click.echo(f"  ID:       {info.device_id:#010x}")
     click.echo(f"  Product:  {info.product_code or '(unknown)'}")
