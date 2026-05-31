@@ -19,6 +19,10 @@ from .device import (
     MessageCallback as MessageCallback,
     ReadingCallback as ReadingCallback,
 )
+from .scanner import (
+    MtiScanResult as MtiScanResult,
+    MtiDeviceScanner as MtiDeviceScanner,
+)
 from .session import MtiSession as MtiSession
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,

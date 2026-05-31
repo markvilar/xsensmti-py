@@ -20,11 +20,6 @@ from .configurator.presets import (
 from .configurator import configure_device as configure_device
 
 from xsensmti.port import MtiPortInfo as MtiPortInfo
-from .scanner import (
-    ScanOptions as ScanOptions,
-    scan_port as scan_port,
-    scan_ports as scan_ports,
-)
 
 from .recorder import (
     RecordingResult as RecordingResult,
