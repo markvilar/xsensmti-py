@@ -3,6 +3,7 @@ Device handle and state types for XSens MTi devices.
 """
 
 from .datatypes import (
+    MtiDeviceID as MtiDeviceID,
     MtiDeviceInfo as MtiDeviceInfo,
     MtiDeviceConfig as MtiDeviceConfig,
     MtiDeviceFilterProfile as MtiDeviceFilterProfile,

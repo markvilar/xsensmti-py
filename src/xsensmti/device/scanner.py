@@ -20,7 +20,10 @@ from xsensmti.xbus import (
     XbusMessageID,
     build_xbus_command,
 )
-from .datatypes import MtiDeviceInfo
+from .datatypes import (
+    MtiDeviceID, 
+    MtiDeviceInfo,
+)
 
 
 @dataclass(frozen=True)
@@ -40,7 +43,7 @@ class MtiScanResult:
 
 class MtiDeviceScanner:
     def __init__(self) -> None:
-        self._results: dict[int, MtiScanResult] = dict()
+        self._results: dict[MtiDeviceID, MtiScanResult] = dict()
         self._lock: threading.Lock = threading.Lock()
 
     def scan_port(
@@ -80,8 +83,8 @@ class MtiDeviceScanner:
             if result is not None:
                 self._results[result.device_info.device_id] = result
             else:
-                stale: list[int] = []
-                device_id: int
+                stale: list[MtiDeviceID] = []
+                device_id: MtiDeviceID
                 cached: MtiScanResult
                 for device_id, cached in self._results.items():
                     if cached.port_info.port == port:
@@ -149,7 +152,7 @@ class MtiDeviceScanner:
 
         return scan_results
 
-    def find(self, device_id: int) -> MtiScanResult | None:
+    def find(self, device_id: MtiDeviceID) -> MtiScanResult | None:
         """Return the cached scan result for a device ID, or None."""
         with self._lock:
             return self._results.get(device_id)
@@ -159,7 +162,7 @@ class MtiDeviceScanner:
         with self._lock:
             return list(self._results.values())
 
-    def device_ids(self) -> set[int]:
+    def device_ids(self) -> set[MtiDeviceID]:
         """Return the set of device IDs found in the last scan."""
         with self._lock:
             return set(self._results.keys())
@@ -237,7 +240,7 @@ def _probe_port(
             ser.close()
 
 
-def _request_device_id(ser: serial.Serial, timeout: float) -> int:
+def _request_device_id(ser: serial.Serial, timeout: float) -> MtiDeviceID:
     message: XbusMessage = send_and_receive(
         ser,
         build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
