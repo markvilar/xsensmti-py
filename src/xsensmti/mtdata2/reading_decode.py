@@ -34,7 +34,9 @@ from .readings import (
     Reading,
     SampleTimeFine,
     StatusByte,
+    StatusByteFlags,
     StatusWord,
+    StatusWordFlags,
     Temperature,
     UnknownReading,
     UtcTime,
@@ -174,7 +176,7 @@ def _decode_position_ll_ellipsoid(packet: MtData2Packet) -> PositionLLEllipsoid:
 def _decode_status_word(packet: MtData2Packet) -> StatusWord:
     _check_length(packet, 4)
     (status,) = struct.unpack(">I", packet.data)
-    return StatusWord(status=status)
+    return StatusWord(status=StatusWordFlags(status))
 
 
 # XSens GnssPvtData layout (94 bytes, big-endian) — Table 25:
@@ -362,7 +364,7 @@ def _decode_delta_q(packet: MtData2Packet) -> DeltaQ:
 def _decode_status_byte(packet: MtData2Packet) -> StatusByte:
     _check_length(packet, 1)
     (status,) = struct.unpack(">B", packet.data)
-    return StatusByte(status=status)
+    return StatusByte(status=StatusByteFlags(status))
 
 
 _DECODERS: dict[MtData2PacketID, ReadingDecoder] = {
