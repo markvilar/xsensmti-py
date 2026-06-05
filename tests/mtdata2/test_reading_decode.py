@@ -33,7 +33,9 @@ from xsensmti.mtdata2 import (
     RateOfTurn,
     SampleTimeFine,
     StatusByte,
+    StatusByteFlags,
     StatusWord,
+    StatusWordFlags,
     Temperature,
     UnknownReading,
     UtcTime,
@@ -254,18 +256,27 @@ class TestDecodeReading:
         assert reading.horiz_dop == pytest.approx(1.00)
 
     def test_status_byte(self) -> None:
+        # 0x05 = SELFTEST | GNSS_FIX
         packet = _make_packet(MtData2PacketID.STATUS_BYTE, struct.pack(">B", 0x05))
         reading = decode_reading(packet)
         assert isinstance(reading, StatusByte)
-        assert reading.status == 0x05
+        assert isinstance(reading.status, StatusByteFlags)
+        assert StatusByteFlags.SELFTEST in reading.status
+        assert StatusByteFlags.GNSS_FIX in reading.status
+        assert StatusByteFlags.FILTER_VALID not in reading.status
 
     def test_status_word(self) -> None:
+        # 0x00000106 = FILTER_VALID | CLIP_ACC_X | CLIP_ACC_Y
         packet = _make_packet(
-            MtData2PacketID.STATUS_WORD, struct.pack(">I", 0x00000001)
+            MtData2PacketID.STATUS_WORD, struct.pack(">I", 0x00000306)
         )
         reading = decode_reading(packet)
         assert isinstance(reading, StatusWord)
-        assert reading.status == 0x00000001
+        assert isinstance(reading.status, StatusWordFlags)
+        assert StatusWordFlags.FILTER_VALID in reading.status
+        assert StatusWordFlags.CLIP_ACC_X in reading.status
+        assert StatusWordFlags.CLIP_ACC_Y in reading.status
+        assert StatusWordFlags.SELFTEST not in reading.status
 
     def test_wrong_length_raises_invalid_reading_data(self) -> None:
         packet = _make_packet(MtData2PacketID.PACKET_COUNTER, b"\x00")

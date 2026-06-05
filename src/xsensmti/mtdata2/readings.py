@@ -8,6 +8,7 @@ meaningful values (degrees, metres, m/s, rad/s) rather than raw bytes.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import IntFlag
 
 
 @dataclass(frozen=True)
@@ -159,18 +160,60 @@ class PositionLLEllipsoid:
     longitude: float
 
 
+class StatusByteFlags(IntFlag):
+    """Bitmask flags for StatusByte (XDI 0xE010). The lower byte of StatusWordFlags."""
+
+    SELFTEST = 0x01
+    FILTER_VALID = 0x02
+    GNSS_FIX = 0x04
+    NO_ROTATION_UPDATE_STATUS_0 = 0x08
+    NO_ROTATION_UPDATE_STATUS_1 = 0x10
+    REPRESENTATIVE_MOTION = 0x20
+    CLOCK_BIAS_ESTIMATION = 0x40
+
+
+class StatusWordFlags(IntFlag):
+    """Bitmask flags for StatusWord (XDI 0xE020). Lower byte matches StatusByteFlags."""
+
+    SELFTEST = 0x00000001
+    FILTER_VALID = 0x00000002
+    GNSS_FIX = 0x00000004
+    NO_ROTATION_UPDATE_STATUS_0 = 0x00000008
+    NO_ROTATION_UPDATE_STATUS_1 = 0x00000010
+    REPRESENTATIVE_MOTION = 0x00000020
+    CLOCK_BIAS_ESTIMATION = 0x00000040
+    CLIP_ACC_X = 0x00000100
+    CLIP_ACC_Y = 0x00000200
+    CLIP_ACC_Z = 0x00000400
+    CLIP_GYR_X = 0x00000800
+    CLIP_GYR_Y = 0x00001000
+    CLIP_GYR_Z = 0x00002000
+    CLIP_MAG_X = 0x00004000
+    CLIP_MAG_Y = 0x00008000
+    CLIP_MAG_Z = 0x00010000
+    GNSS_PVT_STATUS_0 = 0x00020000
+    GNSS_PVT_STATUS_1 = 0x00040000
+    GNSS_PVT_LATENCY_0 = 0x00080000
+    GNSS_PVT_LATENCY_1 = 0x00100000
+    GNSS_PVT_DOP_0 = 0x00200000
+    GNSS_PVT_DOP_1 = 0x00400000
+    ICC_COMMAND_RECEIVED = 0x00800000
+    ICC_IN_PROGRESS = 0x01000000
+    ICC_GRACE_PERIOD = 0x02000000
+
+
 @dataclass(frozen=True)
 class StatusByte:
-    """Compact device status flags (XDI 0xE010)."""
+    """Compact device status flags (XDI 0xE010). The lower byte of StatusWord."""
 
-    status: int
+    status: StatusByteFlags
 
 
 @dataclass(frozen=True)
 class StatusWord:
     """Device status flags (XDI 0xE020)."""
 
-    status: int
+    status: StatusWordFlags
 
 
 @dataclass(frozen=True)

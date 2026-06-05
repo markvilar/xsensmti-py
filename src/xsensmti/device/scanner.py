@@ -21,7 +21,7 @@ from xsensmti.xbus import (
     build_xbus_command,
 )
 from .datatypes import (
-    MtiDeviceID, 
+    MtiDeviceID,
     MtiDeviceInfo,
 )
 
