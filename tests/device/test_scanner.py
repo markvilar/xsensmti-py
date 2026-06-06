@@ -8,16 +8,16 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from xsensmti.device import MtiDeviceScanner, MtiScanResult
+from xsensmti.device import MtiDeviceDescriptor, MtiDeviceScanner
 from xsensmti.device.datatypes import MtiDeviceInfo
 from xsensmti.port import MtiPortInfo
 
 
-def _make_scan_result(
+def _make_descriptor(
     device_id: int = 0x12345678,
     port: str = "/dev/ttyUSB0",
-) -> MtiScanResult:
-    return MtiScanResult(
+) -> MtiDeviceDescriptor:
+    return MtiDeviceDescriptor(
         port_info=MtiPortInfo(port=port, baud=115200),
         device_info=MtiDeviceInfo(
             device_id=device_id,
@@ -53,7 +53,7 @@ class TestMtiDeviceScannerPreScan:
 class TestMtiDeviceScannerScanPorts:
     def test_scan_ports_caches_found_device(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -72,7 +72,7 @@ class TestMtiDeviceScannerScanPorts:
 
     def test_scan_ports_returns_found_devices(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -85,14 +85,14 @@ class TestMtiDeviceScannerScanPorts:
             ),
             patch("xsensmti.device.scanner._probe_port", return_value=result),
         ):
-            scan_results: list[MtiScanResult] = scanner.scan_ports()
+            scan_results: list[MtiDeviceDescriptor] = scanner.scan_ports()
 
         assert scan_results == [result]
 
     def test_scan_ports_replaces_previous_results(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        first_result: MtiScanResult = _make_scan_result(device_id=0x11111111)
-        second_result: MtiScanResult = _make_scan_result(device_id=0x22222222)
+        first_result: MtiDeviceDescriptor = _make_descriptor(device_id=0x11111111)
+        second_result: MtiDeviceDescriptor = _make_descriptor(device_id=0x22222222)
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -121,7 +121,7 @@ class TestMtiDeviceScannerScanPorts:
 
     def test_find_returns_none_for_unknown_device(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result(device_id=0x12345678)
+        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -140,7 +140,7 @@ class TestMtiDeviceScannerScanPorts:
 
     def test_results_returns_copy(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -155,13 +155,13 @@ class TestMtiDeviceScannerScanPorts:
         ):
             scanner.scan_ports()
 
-        copy: list[MtiScanResult] = scanner.results()
+        copy: list[MtiDeviceDescriptor] = scanner.results()
         copy.clear()
         assert len(scanner) == 1
 
     def test_device_ids_returns_correct_set(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result(device_id=0x12345678)
+        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -180,7 +180,7 @@ class TestMtiDeviceScannerScanPorts:
 
     def test_len_after_scan(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -199,7 +199,7 @@ class TestMtiDeviceScannerScanPorts:
 
     def test_contains_after_scan(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result(device_id=0x12345678)
+        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
         port: MagicMock = MagicMock()
         port.device = "/dev/ttyUSB0"
         port.vid = None
@@ -221,7 +221,7 @@ class TestMtiDeviceScannerScanPorts:
 class TestMtiDeviceScannerScanPort:
     def test_scan_port_caches_found_device(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
 
         with (
             patch(
@@ -236,7 +236,7 @@ class TestMtiDeviceScannerScanPort:
 
     def test_scan_port_removes_stale_entry_when_not_found(self) -> None:
         scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiScanResult = _make_scan_result()
+        result: MtiDeviceDescriptor = _make_descriptor()
 
         with (
             patch(

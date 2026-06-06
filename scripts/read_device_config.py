@@ -38,7 +38,7 @@ def main(port: str, baud: int, timeout: float) -> None:
     port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
 
     with MtiSession(port_info, timeout=timeout) as device:
-        info: MtiDeviceInfo = device.device_id()
+        info: MtiDeviceInfo = device.device_info()
         logger.info(
             f"Connected: {info.product_code or '(unknown)'}  "
             f"ID: {info.device_id:#010x}  "

@@ -6,11 +6,12 @@ from __future__ import annotations
 
 from types import TracebackType
 from loguru import logger
+from xsensmti.exceptions import DeviceNotFound
 from xsensmti.port import MtiPortInfo
-from xsensmti.serial import open_serial_port
 from .communicator import MtiDeviceCommunicator
-from .datatypes import MtiDeviceInfo
+from .datatypes import MtiDeviceDescriptor
 from .device import MtiDevice
+from .scanner import _probe_port
 
 
 class MtiSession:
@@ -21,37 +22,28 @@ class MtiSession:
         self._device: MtiDevice | None = None
 
     def open(self) -> MtiDevice:
-        ser = open_serial_port(
+        descriptor: MtiDeviceDescriptor | None = _probe_port(
             self._port_info.port,
             self._port_info.baud,
-            read_timeout=0.1,
+            self._timeout,
+            self._port_info.vid,
+            self._port_info.pid,
         )
-        ser.reset_input_buffer()
+        if descriptor is None:
+            raise DeviceNotFound(f"no MTi device found on {self._port_info.port}")
 
         communicator: MtiDeviceCommunicator = MtiDeviceCommunicator(
-            ser, timeout=self._timeout
-        )
-        communicator.goto_config()
-
-        device_id: MtiDeviceInfo = MtiDeviceInfo(
-            device_id=communicator.get_device_id(),
-            product_code=communicator.get_product_code(),
-            firmware_version=communicator.get_firmware_version(),
-            hardware_version=communicator.get_hardware_version(),
+            descriptor, timeout=self._timeout
         )
 
         logger.info(
-            f"{self._port_info.port}: {device_id.product_code or '(unknown)'}  "
-            f"ID: {device_id.device_id:#010x}  "
-            f"FW: {device_id.firmware_version}  HW: {device_id.hardware_version}"
+            f"{descriptor.port_info.port}: {descriptor.device_info.product_code or '(unknown)'}  "
+            f"ID: {descriptor.device_info.device_id:#010x}  "
+            f"FW: {descriptor.device_info.firmware_version}  HW: {descriptor.device_info.hardware_version}"
         )
 
         self._communicator = communicator
-        self._device = MtiDevice(
-            device_id=device_id,
-            communicator=communicator,
-            timeout=self._timeout,
-        )
+        self._device = MtiDevice(communicator=communicator, timeout=self._timeout)
         return self._device
 
     def close(self) -> None:
