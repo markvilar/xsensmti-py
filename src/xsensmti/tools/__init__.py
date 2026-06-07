@@ -19,8 +19,6 @@ from .configurator.presets import (
 
 from .configurator import configure_device as configure_device
 
-from xsensmti.port import MtiPortInfo as MtiPortInfo
-
 from .recorder import (
     RecordingResult as RecordingResult,
     record_device as record_device,

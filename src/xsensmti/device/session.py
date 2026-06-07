@@ -7,7 +7,7 @@ from __future__ import annotations
 from types import TracebackType
 from loguru import logger
 from xsensmti.exceptions import DeviceNotFound
-from xsensmti.port import MtiPortInfo
+from xsensmti.device.port import MtiPortInfo
 from .communicator import MtiDeviceCommunicator
 from .datatypes import MtiDeviceDescriptor
 from .device import MtiDevice
