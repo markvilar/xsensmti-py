@@ -12,7 +12,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
-from xsensmti.port import MtiPortInfo
+from xsensmti.device.port import MtiPortInfo
 from xsensmti.serial import open_serial_port, send_and_receive
 from xsensmti.xbus import (
     XbusMessage,

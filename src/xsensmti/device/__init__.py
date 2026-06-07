@@ -16,6 +16,7 @@ from .datatypes import (
     MtiMessageHeader as MtiMessageHeader,
 )
 from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
+from .port import MtiPortInfo as MtiPortInfo
 from .device import (
     MtiDevice as MtiDevice,
     MessageCallback as MessageCallback,

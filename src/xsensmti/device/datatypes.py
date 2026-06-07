@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 
 from xsensmti.mtdata2 import MtData2PacketID
-from xsensmti.port import MtiPortInfo
+from xsensmti.device.port import MtiPortInfo
 from xsensmti.xbus import XbusMessage
 
 

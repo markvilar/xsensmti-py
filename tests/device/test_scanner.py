@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 from xsensmti.device import MtiDeviceDescriptor, MtiDeviceScanner
 from xsensmti.device.datatypes import MtiDeviceInfo
-from xsensmti.port import MtiPortInfo
+from xsensmti.device import MtiPortInfo
 
 
 def _make_descriptor(

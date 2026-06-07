@@ -17,7 +17,7 @@ from xsensmti.mtdata2 import (
     decode_mtdata2_packets_from_message,
     decode_reading,
 )
-from xsensmti.port import MtiPortInfo
+from xsensmti.device import MtiPortInfo
 from xsensmti.device import MtiSession
 from xsensmti.xbus import XbusMessageID
 

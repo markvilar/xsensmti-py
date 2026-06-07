@@ -20,7 +20,7 @@ from xsensmti.device import (
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
 )
-from xsensmti.port import MtiPortInfo
+from xsensmti.device import MtiPortInfo
 from xsensmti.device import MtiSession
 
 
