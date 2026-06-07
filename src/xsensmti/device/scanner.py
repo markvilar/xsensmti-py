@@ -1,16 +1,14 @@
 """
-MtiDeviceScanner — discovers connected XSens MTi devices on serial ports.
+Port scanning and probing for XSens MTi devices.
 """
 
 from __future__ import annotations
 
 import serial
 import serial.tools.list_ports
-import threading
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from loguru import logger
-from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
 from xsensmti.device.port import MtiPortInfo
 from xsensmti.serial import open_serial_port, send_and_receive
@@ -20,173 +18,98 @@ from xsensmti.xbus import (
     build_xbus_command,
 )
 from .datatypes import (
-    MtiDeviceDescriptor,
     MtiDeviceID,
     MtiDeviceInfo,
+    MtiProbeResult,
+    MtiScanResult,
 )
 
 
-class MtiDeviceScanner:
-    def __init__(self) -> None:
-        self._results: dict[MtiDeviceID, MtiDeviceDescriptor] = dict()
-        self._lock: threading.Lock = threading.Lock()
-
-    def scan_port(
-        self,
-        port: str,
-        baud: int = 115200,
-        timeout: float = 2.0,
-    ) -> MtiDeviceDescriptor | None:
-        """
-        Probe a single serial port and update the cached results.
-
-        If a device is found it is added to or updated in the cache. If no
-        device responds, any existing cached entry for that port is removed.
-
-        Arguments
-        ---------
-        port: Serial port path to probe.
-        baud: Baud rate to use.
-        timeout: Maximum seconds to wait for each Xbus response.
-
-        Returns
-        -------
-        An MtiDeviceDescriptor if an MTi device is found, or None.
-        """
-        vid: int | None = None
-        pid: int | None = None
-        port_info: ListPortInfo
-        for port_info in serial.tools.list_ports.comports():
-            if port_info.device == port:
-                vid = port_info.vid
-                pid = port_info.pid
-                break
-
-        result: MtiDeviceDescriptor | None = _probe_port(port, baud, timeout, vid, pid)
-
-        with self._lock:
-            if result is not None:
-                self._results[result.device_info.device_id] = result
-            else:
-                stale: list[MtiDeviceID] = []
-                device_id: MtiDeviceID
-                cached: MtiDeviceDescriptor
-                for device_id, cached in self._results.items():
-                    if cached.port_info.port == port:
-                        stale.append(device_id)
-                for device_id in stale:
-                    del self._results[device_id]
-
-        return result
-
-    def scan_ports(
-        self,
-        baud: int = 115200,
-        timeout: float = 2.0,
-        usb_only: bool = False,
-    ) -> list[MtiDeviceDescriptor]:
-        """
-        Probe all available serial ports in parallel and cache found devices.
-
-        Replaces all results from the previous scan entirely.
-
-        Arguments
-        ---------
-        baud: Baud rate to use for probing.
-        timeout: Maximum seconds to wait for each Xbus response per port.
-        usb_only: When True, only probe ports with a USB vendor ID.
-
-        Returns
-        -------
-        A list of MtiDeviceDescriptor for each detected MTi device.
-        """
-        all_ports: list[ListPortInfo] = list(serial.tools.list_ports.comports())
-
-        if usb_only:
-            usb_ports: list[ListPortInfo] = []
-            port_info: ListPortInfo
-            for port_info in all_ports:
-                if port_info.vid is not None:
-                    usb_ports.append(port_info)
-            all_ports = usb_ports
-
-        futures: list[Future[MtiDeviceDescriptor | None]] = []
-        with ThreadPoolExecutor() as executor:
-            for port_info in all_ports:
-                future: Future[MtiDeviceDescriptor | None] = executor.submit(
-                    _probe_port,
-                    port_info.device,
-                    baud,
-                    timeout,
-                    port_info.vid,
-                    port_info.pid,
-                )
-                futures.append(future)
-
-        scan_results: list[MtiDeviceDescriptor] = []
-        for future in futures:
-            probe_result: MtiDeviceDescriptor | None = future.result()
-            if probe_result is not None:
-                scan_results.append(probe_result)
-
-        with self._lock:
-            self._results = dict()
-            scan_result: MtiDeviceDescriptor
-            for scan_result in scan_results:
-                self._results[scan_result.device_info.device_id] = scan_result
-
-        return scan_results
-
-    def find(self, device_id: MtiDeviceID) -> MtiDeviceDescriptor | None:
-        """Return the cached scan result for a device ID, or None."""
-        with self._lock:
-            return self._results.get(device_id)
-
-    def results(self) -> list[MtiDeviceDescriptor]:
-        """Return a copy of all cached scan results."""
-        with self._lock:
-            return list(self._results.values())
-
-    def device_ids(self) -> set[MtiDeviceID]:
-        """Return the set of device IDs found in the last scan."""
-        with self._lock:
-            return set(self._results.keys())
-
-    def __len__(self) -> int:
-        with self._lock:
-            return len(self._results)
-
-    def __contains__(self, device_id: object) -> bool:
-        with self._lock:
-            return device_id in self._results
-
-
-def _probe_port(
-    port: str,
-    baud: int = 115200,
-    timeout: float = 2.0,
-    vid: int | None = None,
-    pid: int | None = None,
-) -> MtiDeviceDescriptor | None:
+def scan_port(port: str, baud: int = 115200) -> MtiScanResult | None:
     """
-    Probe a single serial port for an XSens MTi device.
+    Look up a single serial port by path and return its OS-reported info.
+
+    No serial port is opened. Returns None if the port is not listed by the OS.
 
     Arguments
     ---------
-    port: Serial port path to probe.
-    baud: Baud rate to use.
-    timeout: Maximum seconds to wait for each Xbus response.
-    vid: USB vendor ID, if known.
-    pid: USB product ID, if known.
+    port: Serial port path to look up (e.g. "/dev/ttyUSB0").
+    baud: Baud rate to embed in the returned port info.
 
     Returns
     -------
-    An MtiDeviceDescriptor if an MTi device responds, or None.
+    An MtiScanResult if the port is found, or None.
+    """
+    from serial.tools.list_ports_common import ListPortInfo
+
+    port_info: ListPortInfo
+    for port_info in serial.tools.list_ports.comports():
+        if port_info.device == port:
+            return MtiScanResult(
+                port_info=MtiPortInfo(
+                    port=port_info.device,
+                    baud=baud,
+                    vid=port_info.vid,
+                    pid=port_info.pid,
+                )
+            )
+    return None
+
+
+def scan_ports(baud: int = 115200, usb_only: bool = False) -> list[MtiScanResult]:
+    """
+    Enumerate all serial ports reported by the OS.
+
+    No serial ports are opened.
+
+    Arguments
+    ---------
+    baud: Baud rate to embed in each returned port info.
+    usb_only: When True, only include ports with a USB vendor ID.
+
+    Returns
+    -------
+    A list of MtiScanResult, one per matching port.
+    """
+    from serial.tools.list_ports_common import ListPortInfo
+
+    results: list[MtiScanResult] = []
+    port_info: ListPortInfo
+    for port_info in serial.tools.list_ports.comports():
+        if usb_only and port_info.vid is None:
+            continue
+        results.append(
+            MtiScanResult(
+                port_info=MtiPortInfo(
+                    port=port_info.device,
+                    baud=baud,
+                    vid=port_info.vid,
+                    pid=port_info.pid,
+                )
+            )
+        )
+    return results
+
+
+def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult | None:
+    """
+    Probe a single serial port for an XSens MTi device.
+
+    Opens the port, puts the device in Config State, requests its identity,
+    then closes the port. Raises no exceptions on failure — returns None instead.
+
+    Arguments
+    ---------
+    port_info: Connection parameters for the port to probe.
+    timeout: Maximum seconds to wait for each Xbus response.
+
+    Returns
+    -------
+    An MtiProbeResult if an MTi device responds, or None.
     """
     ser: serial.Serial | None = None
-
     try:
-        ser = open_serial_port(port, baud, read_timeout=0.1)
+        ser = open_serial_port(port_info.port, port_info.baud, read_timeout=0.1)
         ser.reset_input_buffer()
 
         send_and_receive(
@@ -204,25 +127,58 @@ def _probe_port(
         )
 
         logger.debug(
-            f"{port}: found {device_info.product_code or '(unknown)'}  "
+            f"{port_info.port}: found {device_info.product_code or '(unknown)'}  "
             f"ID: {device_info.device_id:#010x}  "
             f"FW: {device_info.firmware_version}  HW: {device_info.hardware_version}"
         )
 
-        return MtiDeviceDescriptor(
-            port_info=MtiPortInfo(port=port, baud=baud, vid=vid, pid=pid),
-            device_info=device_info,
-        )
+        return MtiProbeResult(port_info=port_info, device_info=device_info)
 
     except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
-        logger.debug(f"{port}: no MTi device found")
+        logger.debug(f"{port_info.port}: no MTi device found")
         return None
     except (OSError, serial.SerialException) as exception:
-        logger.debug(f"{port}: could not open port: {exception}")
+        logger.debug(f"{port_info.port}: could not open port: {exception}")
         return None
     finally:
         if ser is not None:
             ser.close()
+
+
+def probe_ports(
+    port_infos: list[MtiPortInfo],
+    timeout: float = 2.0,
+) -> list[MtiProbeResult]:
+    """
+    Probe multiple serial ports in parallel for XSens MTi devices.
+
+    Each port is probed in a separate thread. Ports where no device responds
+    are silently skipped.
+
+    Arguments
+    ---------
+    port_infos: Connection parameters for the ports to probe.
+    timeout: Maximum seconds to wait for each Xbus response per port.
+
+    Returns
+    -------
+    A list of MtiProbeResult for each port where a device was found.
+    """
+    futures: list[Future[MtiProbeResult | None]] = []
+    with ThreadPoolExecutor() as executor:
+        port_info: MtiPortInfo
+        for port_info in port_infos:
+            future: Future[MtiProbeResult | None] = executor.submit(
+                probe_port, port_info, timeout
+            )
+            futures.append(future)
+
+    results: list[MtiProbeResult] = []
+    for future in futures:
+        result: MtiProbeResult | None = future.result()
+        if result is not None:
+            results.append(result)
+    return results
 
 
 def _request_device_id(ser: serial.Serial, timeout: float) -> MtiDeviceID:
@@ -256,7 +212,7 @@ def _request_firmware_version(ser: serial.Serial, timeout: float) -> str:
             expected_mid=XbusMessageID.FIRMWARE_REVISION,
             timeout=timeout,
         )
-        return f"{message.payload[0]}." f"{message.payload[1]}." f"{message.payload[2]}"
+        return f"{message.payload[0]}.{message.payload[1]}.{message.payload[2]}"
     except (CommandTimeout, UnexpectedResponse):
         return ""
 

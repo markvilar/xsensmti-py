@@ -28,6 +28,34 @@ class MtiDeviceInfo:
 
 
 @dataclass(frozen=True)
+class MtiScanResult:
+    """
+    Result of a single serial port scan.
+
+    Attributes
+    ----------
+    port_info: Connection parameters reported by the OS for this port.
+    """
+
+    port_info: MtiPortInfo
+
+
+@dataclass(frozen=True)
+class MtiProbeResult:
+    """
+    Result of probing a single serial port for an XSens MTi device.
+
+    Attributes
+    ----------
+    port_info: Connection parameters used during the probe.
+    device_info: Device identity queried during the probe.
+    """
+
+    port_info: MtiPortInfo
+    device_info: MtiDeviceInfo
+
+
+@dataclass(frozen=True)
 class MtiDeviceDescriptor:
     """
     Connection parameters and confirmed identity for an MTi device.
