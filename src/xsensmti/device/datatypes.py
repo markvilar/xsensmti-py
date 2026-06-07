@@ -56,25 +56,6 @@ class MtiProbeResult:
 
 
 @dataclass(frozen=True)
-class MtiDeviceDescriptor:
-    """
-    Connection parameters and confirmed identity for an MTi device.
-
-    Produced by the scanner after probing a port. Passed to
-    MtiDeviceCommunicator, which uses it to open the port and identify
-    the device without re-querying.
-
-    Attributes
-    ----------
-    port_info: Serial port connection parameters.
-    device_info: Device identity queried during port probing.
-    """
-
-    port_info: MtiPortInfo
-    device_info: MtiDeviceInfo
-
-
-@dataclass(frozen=True)
 class MtiMessageHeader:
     """Receipt metadata for a single Xbus message."""
 

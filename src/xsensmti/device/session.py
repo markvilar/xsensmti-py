@@ -9,7 +9,7 @@ from loguru import logger
 from xsensmti.exceptions import DeviceNotFound
 from xsensmti.device.port import MtiPortInfo
 from .communicator import MtiDeviceCommunicator
-from .datatypes import MtiDeviceDescriptor, MtiProbeResult
+from .datatypes import MtiProbeResult
 from .device import MtiDevice
 from .scanner import probe_port
 
@@ -25,19 +25,17 @@ class MtiSession:
         probe_result: MtiProbeResult | None = probe_port(self._port_info, self._timeout)
         if probe_result is None:
             raise DeviceNotFound(f"no MTi device found on {self._port_info.port}")
-        descriptor: MtiDeviceDescriptor = MtiDeviceDescriptor(
-            port_info=probe_result.port_info,
-            device_info=probe_result.device_info,
-        )
 
         communicator: MtiDeviceCommunicator = MtiDeviceCommunicator(
-            descriptor, timeout=self._timeout
+            port_info=probe_result.port_info,
+            device_info=probe_result.device_info,
+            timeout=self._timeout,
         )
 
         logger.info(
-            f"{descriptor.port_info.port}: {descriptor.device_info.product_code or '(unknown)'}  "
-            f"ID: {descriptor.device_info.device_id:#010x}  "
-            f"FW: {descriptor.device_info.firmware_version}  HW: {descriptor.device_info.hardware_version}"
+            f"{probe_result.port_info.port}: {probe_result.device_info.product_code or '(unknown)'}  "
+            f"ID: {probe_result.device_info.device_id:#010x}  "
+            f"FW: {probe_result.device_info.firmware_version}  HW: {probe_result.device_info.hardware_version}"
         )
 
         self._communicator = communicator

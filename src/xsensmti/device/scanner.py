@@ -148,6 +148,7 @@ def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult |
 def probe_ports(
     port_infos: list[MtiPortInfo],
     timeout: float = 2.0,
+    max_workers: int | None = None,
 ) -> list[MtiProbeResult]:
     """
     Probe multiple serial ports in parallel for XSens MTi devices.
@@ -159,13 +160,14 @@ def probe_ports(
     ---------
     port_infos: Connection parameters for the ports to probe.
     timeout: Maximum seconds to wait for each Xbus response per port.
+    max_workers: Maximum number of threads to use. Defaults to one per port.
 
     Returns
     -------
     A list of MtiProbeResult for each port where a device was found.
     """
     futures: list[Future[MtiProbeResult | None]] = []
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         port_info: MtiPortInfo
         for port_info in port_infos:
             future: Future[MtiProbeResult | None] = executor.submit(

@@ -18,19 +18,25 @@ from xsensmti.xbus import (
     XbusMessageID,
     build_xbus_command,
 )
-from .datatypes import MtiDeviceDescriptor, MtiDeviceInfo
+from .datatypes import MtiDeviceInfo
 from .xbus_reader import XbusStreamReader
 
 
 class MtiDeviceCommunicator:
-    def __init__(self, descriptor: MtiDeviceDescriptor, timeout: float = 5.0) -> None:
-        self._descriptor: MtiDeviceDescriptor = descriptor
+    def __init__(
+        self,
+        port_info: MtiPortInfo,
+        device_info: MtiDeviceInfo,
+        timeout: float = 5.0,
+    ) -> None:
+        self._port_info: MtiPortInfo = port_info
+        self._device_info: MtiDeviceInfo = device_info
         self._timeout: float = timeout
         self._message_callback: Callable[[XbusMessage], None] | None = None
         self._error_callback: Callable[[Exception], None] | None = None
         self._ser: serial.Serial = open_serial_port(
-            descriptor.port_info.port,
-            descriptor.port_info.baud,
+            port_info.port,
+            port_info.baud,
             read_timeout=0.1,
         )
         self._ser.reset_input_buffer()
@@ -50,10 +56,10 @@ class MtiDeviceCommunicator:
         return str(self._ser.port)
 
     def port_info(self) -> MtiPortInfo:
-        return self._descriptor.port_info
+        return self._port_info
 
     def device_info(self) -> MtiDeviceInfo:
-        return self._descriptor.device_info
+        return self._device_info
 
     # --- Callback registration ---
 

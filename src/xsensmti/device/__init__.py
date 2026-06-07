@@ -3,7 +3,6 @@ Device handle and state types for XSens MTi devices.
 """
 
 from .datatypes import (
-    MtiDeviceDescriptor as MtiDeviceDescriptor,
     MtiDeviceID as MtiDeviceID,
     MtiDeviceInfo as MtiDeviceInfo,
     MtiDeviceConfig as MtiDeviceConfig,
@@ -16,6 +15,12 @@ from .datatypes import (
     MtiMessageHeader as MtiMessageHeader,
     MtiScanResult as MtiScanResult,
     MtiProbeResult as MtiProbeResult,
+)
+from .manager import (
+    ConnectCallback as ConnectCallback,
+    DisconnectCallback as DisconnectCallback,
+    MtiDeviceManager as MtiDeviceManager,
+    MtiPortState as MtiPortState,
 )
 from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
 from .port import MtiPortInfo as MtiPortInfo

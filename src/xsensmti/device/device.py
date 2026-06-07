@@ -123,6 +123,9 @@ class MtiDevice:
             reading_callback: ReadingCallback[Reading] = reading_callbacks[reading_type]
             reading_callback(message.header, reading)
 
+    def close(self) -> None:
+        self._communicator.close()
+
     def goto_config(self) -> None:
         self._communicator.goto_config()
         self._state = MtiDeviceState.CONFIG
