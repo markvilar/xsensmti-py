@@ -1,24 +1,43 @@
 """
-Unit tests for MtiDeviceScanner.
+Unit tests for scanner module functions.
 
-_probe_port is mocked so no serial port is needed.
+Serial ports and probe_port are mocked so no hardware is needed.
 """
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from xsensmti.device import MtiDeviceDescriptor, MtiDeviceScanner
+from xsensmti.device import (
+    MtiPortInfo,
+    MtiProbeResult,
+    MtiScanResult,
+    probe_ports,
+    scan_port,
+    scan_ports,
+)
 from xsensmti.device.datatypes import MtiDeviceInfo
-from xsensmti.device import MtiPortInfo
 
 
-def _make_descriptor(
-    device_id: int = 0x12345678,
+def _make_port_mock(
+    device: str = "/dev/ttyUSB0",
+    vid: int | None = None,
+    pid: int | None = None,
+) -> MagicMock:
+    port: MagicMock = MagicMock()
+    port.device = device
+    port.vid = vid
+    port.pid = pid
+    return port
+
+
+def _make_probe_result(
     port: str = "/dev/ttyUSB0",
-) -> MtiDeviceDescriptor:
-    return MtiDeviceDescriptor(
-        port_info=MtiPortInfo(port=port, baud=115200),
+    baud: int = 115200,
+    device_id: int = 0x12345678,
+) -> MtiProbeResult:
+    return MtiProbeResult(
+        port_info=MtiPortInfo(port=port, baud=baud),
         device_info=MtiDeviceInfo(
             device_id=device_id,
             product_code="MTi-700",
@@ -28,234 +47,146 @@ def _make_descriptor(
     )
 
 
-class TestMtiDeviceScannerPreScan:
-    def test_find_returns_none_before_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        assert scanner.find(0x12345678) is None
-
-    def test_results_returns_empty_list_before_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        assert scanner.results() == []
-
-    def test_device_ids_returns_empty_set_before_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        assert scanner.device_ids() == set()
-
-    def test_len_is_zero_before_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        assert len(scanner) == 0
-
-    def test_contains_is_false_before_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        assert 0x12345678 not in scanner
-
-
-class TestMtiDeviceScannerScanPorts:
-    def test_scan_ports_caches_found_device(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+class TestScanPort:
+    def test_returns_scan_result_when_port_found(self) -> None:
+        port_mock: MagicMock = _make_port_mock(
+            device="/dev/ttyUSB0", vid=0x2639, pid=0x0017
+        )
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=[port_mock],
         ):
-            scanner.scan_ports()
+            result: MtiScanResult | None = scan_port("/dev/ttyUSB0")
 
-        assert scanner.find(0x12345678) == result
+        assert result is not None
+        assert result.port_info.port == "/dev/ttyUSB0"
+        assert result.port_info.vid == 0x2639
+        assert result.port_info.pid == 0x0017
 
-    def test_scan_ports_returns_found_devices(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+    def test_returns_none_when_port_not_listed(self) -> None:
+        port_mock: MagicMock = _make_port_mock(device="/dev/ttyUSB1")
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=[port_mock],
         ):
-            scan_results: list[MtiDeviceDescriptor] = scanner.scan_ports()
+            result: MtiScanResult | None = scan_port("/dev/ttyUSB0")
 
-        assert scan_results == [result]
+        assert result is None
 
-    def test_scan_ports_replaces_previous_results(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        first_result: MtiDeviceDescriptor = _make_descriptor(device_id=0x11111111)
-        second_result: MtiDeviceDescriptor = _make_descriptor(device_id=0x22222222)
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=first_result),
+    def test_baud_is_embedded_in_port_info(self) -> None:
+        port_mock: MagicMock = _make_port_mock(device="/dev/ttyUSB0")
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=[port_mock],
         ):
-            scanner.scan_ports()
+            result: MtiScanResult | None = scan_port("/dev/ttyUSB0", baud=921600)
 
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=second_result),
+        assert result is not None
+        assert result.port_info.baud == 921600
+
+
+class TestScanPorts:
+    def test_returns_empty_list_when_no_ports(self) -> None:
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=[],
         ):
-            scanner.scan_ports()
+            results: list[MtiScanResult] = scan_ports()
 
-        assert scanner.find(0x11111111) is None
-        assert scanner.find(0x22222222) == second_result
+        assert results == []
 
-    def test_find_returns_none_for_unknown_device(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+    def test_returns_one_result_per_port(self) -> None:
+        mocks: list[MagicMock] = [
+            _make_port_mock(device="/dev/ttyUSB0"),
+            _make_port_mock(device="/dev/ttyUSB1"),
+        ]
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=mocks,
         ):
-            scanner.scan_ports()
+            results: list[MtiScanResult] = scan_ports()
 
-        assert scanner.find(0x99999999) is None
+        assert len(results) == 2
+        assert results[0].port_info.port == "/dev/ttyUSB0"
+        assert results[1].port_info.port == "/dev/ttyUSB1"
 
-    def test_results_returns_copy(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+    def test_usb_only_excludes_non_usb_ports(self) -> None:
+        mocks: list[MagicMock] = [
+            _make_port_mock(device="/dev/ttyUSB0", vid=0x2639, pid=0x0017),
+            _make_port_mock(device="/dev/ttyS0", vid=None, pid=None),
+        ]
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=mocks,
         ):
-            scanner.scan_ports()
+            results: list[MtiScanResult] = scan_ports(usb_only=True)
 
-        copy: list[MtiDeviceDescriptor] = scanner.results()
-        copy.clear()
-        assert len(scanner) == 1
+        assert len(results) == 1
+        assert results[0].port_info.port == "/dev/ttyUSB0"
 
-    def test_device_ids_returns_correct_set(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+    def test_usb_only_false_includes_all_ports(self) -> None:
+        mocks: list[MagicMock] = [
+            _make_port_mock(device="/dev/ttyUSB0", vid=0x2639, pid=0x0017),
+            _make_port_mock(device="/dev/ttyS0", vid=None, pid=None),
+        ]
+        with patch(
+            "xsensmti.device.scanner.serial.tools.list_ports.comports",
+            return_value=mocks,
         ):
-            scanner.scan_ports()
+            results: list[MtiScanResult] = scan_ports(usb_only=False)
 
-        assert scanner.device_ids() == {0x12345678}
+        assert len(results) == 2
 
-    def test_len_after_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
 
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+class TestProbePorts:
+    def test_returns_results_for_found_devices(self) -> None:
+        port_infos: list[MtiPortInfo] = [
+            MtiPortInfo(port="/dev/ttyUSB0", baud=115200),
+        ]
+        probe_result: MtiProbeResult = _make_probe_result()
+
+        with patch(
+            "xsensmti.device.scanner.probe_port",
+            return_value=probe_result,
         ):
-            scanner.scan_ports()
+            results: list[MtiProbeResult] = probe_ports(port_infos)
 
-        assert len(scanner) == 1
+        assert results == [probe_result]
 
-    def test_contains_after_scan(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor(device_id=0x12345678)
-        port: MagicMock = MagicMock()
-        port.device = "/dev/ttyUSB0"
-        port.vid = None
-        port.pid = None
+    def test_excludes_ports_where_probe_returns_none(self) -> None:
+        port_infos: list[MtiPortInfo] = [
+            MtiPortInfo(port="/dev/ttyUSB0", baud=115200),
+            MtiPortInfo(port="/dev/ttyUSB1", baud=115200),
+        ]
+        found: MtiProbeResult = _make_probe_result(port="/dev/ttyUSB0")
 
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[port],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+        def _side_effect(
+            port_info: MtiPortInfo, timeout: float
+        ) -> MtiProbeResult | None:
+            if port_info.port == "/dev/ttyUSB0":
+                return found
+            return None
+
+        with patch(
+            "xsensmti.device.scanner.probe_port",
+            side_effect=_side_effect,
         ):
-            scanner.scan_ports()
+            results: list[MtiProbeResult] = probe_ports(port_infos)
 
-        assert 0x12345678 in scanner
-        assert 0x99999999 not in scanner
+        assert results == [found]
 
-
-class TestMtiDeviceScannerScanPort:
-    def test_scan_port_caches_found_device(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
+    def test_returns_empty_list_when_no_devices_found(self) -> None:
+        port_infos: list[MtiPortInfo] = [
+            MtiPortInfo(port="/dev/ttyUSB0", baud=115200),
+        ]
+        with patch(
+            "xsensmti.device.scanner.probe_port",
+            return_value=None,
         ):
-            scanner.scan_port("/dev/ttyUSB0")
+            results: list[MtiProbeResult] = probe_ports(port_infos)
 
-        assert scanner.find(0x12345678) == result
+        assert results == []
 
-    def test_scan_port_removes_stale_entry_when_not_found(self) -> None:
-        scanner: MtiDeviceScanner = MtiDeviceScanner()
-        result: MtiDeviceDescriptor = _make_descriptor()
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=result),
-        ):
-            scanner.scan_port("/dev/ttyUSB0")
-
-        assert scanner.find(0x12345678) is not None
-
-        with (
-            patch(
-                "xsensmti.device.scanner.serial.tools.list_ports.comports",
-                return_value=[],
-            ),
-            patch("xsensmti.device.scanner._probe_port", return_value=None),
-        ):
-            scanner.scan_port("/dev/ttyUSB0")
-
-        assert scanner.find(0x12345678) is None
+    def test_returns_empty_list_when_no_ports_given(self) -> None:
+        results: list[MtiProbeResult] = probe_ports([])
+        assert results == []

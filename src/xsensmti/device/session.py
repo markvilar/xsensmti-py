@@ -9,9 +9,9 @@ from loguru import logger
 from xsensmti.exceptions import DeviceNotFound
 from xsensmti.device.port import MtiPortInfo
 from .communicator import MtiDeviceCommunicator
-from .datatypes import MtiDeviceDescriptor
+from .datatypes import MtiDeviceDescriptor, MtiProbeResult
 from .device import MtiDevice
-from .scanner import _probe_port
+from .scanner import probe_port
 
 
 class MtiSession:
@@ -22,15 +22,13 @@ class MtiSession:
         self._device: MtiDevice | None = None
 
     def open(self) -> MtiDevice:
-        descriptor: MtiDeviceDescriptor | None = _probe_port(
-            self._port_info.port,
-            self._port_info.baud,
-            self._timeout,
-            self._port_info.vid,
-            self._port_info.pid,
-        )
-        if descriptor is None:
+        probe_result: MtiProbeResult | None = probe_port(self._port_info, self._timeout)
+        if probe_result is None:
             raise DeviceNotFound(f"no MTi device found on {self._port_info.port}")
+        descriptor: MtiDeviceDescriptor = MtiDeviceDescriptor(
+            port_info=probe_result.port_info,
+            device_info=probe_result.device_info,
+        )
 
         communicator: MtiDeviceCommunicator = MtiDeviceCommunicator(
             descriptor, timeout=self._timeout

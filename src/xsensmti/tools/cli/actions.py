@@ -15,7 +15,7 @@ from xsensmti.exceptions import (
     UnexpectedResponse,
     XsensError,
 )
-from xsensmti.device import MtiDeviceScanner, MtiDeviceDescriptor
+from xsensmti.device import MtiProbeResult, probe_ports, scan_ports
 from ..configurator import configure_device
 from ..configurator.presets import (
     OutputPreset,
@@ -29,12 +29,10 @@ from ..recorder import (
 
 def dispatch_scan_devices(baud: int, timeout: float, usb_only: bool) -> None:
     """Call the scanner and echo found MTi devices to stdout."""
-    scanner: MtiDeviceScanner = MtiDeviceScanner()
-    scan_results: list[MtiDeviceDescriptor] = scanner.scan_ports(
-        baud=baud, timeout=timeout, usb_only=usb_only
-    )
+    port_infos = [r.port_info for r in scan_ports(baud=baud, usb_only=usb_only)]
+    scan_results: list[MtiProbeResult] = probe_ports(port_infos, timeout=timeout)
 
-    result: MtiDeviceDescriptor
+    result: MtiProbeResult
     for result in scan_results:
         label: str = (
             f"  product={result.device_info.product_code}"
