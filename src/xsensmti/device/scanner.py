@@ -9,7 +9,6 @@ import serial.tools.list_ports
 import threading
 
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass
 from loguru import logger
 from serial.tools.list_ports_common import ListPortInfo
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
@@ -21,29 +20,15 @@ from xsensmti.xbus import (
     build_xbus_command,
 )
 from .datatypes import (
+    MtiDeviceDescriptor,
     MtiDeviceID,
     MtiDeviceInfo,
 )
 
 
-@dataclass(frozen=True)
-class MtiScanResult:
-    """
-    A detected MTi device with its connection parameters and identity.
-
-    Attributes
-    ----------
-    port_info: Serial port connection parameters.
-    device_info: Device identity information queried during the scan.
-    """
-
-    port_info: MtiPortInfo
-    device_info: MtiDeviceInfo
-
-
 class MtiDeviceScanner:
     def __init__(self) -> None:
-        self._results: dict[MtiDeviceID, MtiScanResult] = dict()
+        self._results: dict[MtiDeviceID, MtiDeviceDescriptor] = dict()
         self._lock: threading.Lock = threading.Lock()
 
     def scan_port(
@@ -51,7 +36,7 @@ class MtiDeviceScanner:
         port: str,
         baud: int = 115200,
         timeout: float = 2.0,
-    ) -> MtiScanResult | None:
+    ) -> MtiDeviceDescriptor | None:
         """
         Probe a single serial port and update the cached results.
 
@@ -66,7 +51,7 @@ class MtiDeviceScanner:
 
         Returns
         -------
-        An MtiScanResult if an MTi device is found, or None.
+        An MtiDeviceDescriptor if an MTi device is found, or None.
         """
         vid: int | None = None
         pid: int | None = None
@@ -77,7 +62,7 @@ class MtiDeviceScanner:
                 pid = port_info.pid
                 break
 
-        result: MtiScanResult | None = _probe_port(port, baud, timeout, vid, pid)
+        result: MtiDeviceDescriptor | None = _probe_port(port, baud, timeout, vid, pid)
 
         with self._lock:
             if result is not None:
@@ -85,7 +70,7 @@ class MtiDeviceScanner:
             else:
                 stale: list[MtiDeviceID] = []
                 device_id: MtiDeviceID
-                cached: MtiScanResult
+                cached: MtiDeviceDescriptor
                 for device_id, cached in self._results.items():
                     if cached.port_info.port == port:
                         stale.append(device_id)
@@ -99,7 +84,7 @@ class MtiDeviceScanner:
         baud: int = 115200,
         timeout: float = 2.0,
         usb_only: bool = False,
-    ) -> list[MtiScanResult]:
+    ) -> list[MtiDeviceDescriptor]:
         """
         Probe all available serial ports in parallel and cache found devices.
 
@@ -113,7 +98,7 @@ class MtiDeviceScanner:
 
         Returns
         -------
-        A list of MtiScanResult for each detected MTi device.
+        A list of MtiDeviceDescriptor for each detected MTi device.
         """
         all_ports: list[ListPortInfo] = list(serial.tools.list_ports.comports())
 
@@ -125,10 +110,10 @@ class MtiDeviceScanner:
                     usb_ports.append(port_info)
             all_ports = usb_ports
 
-        futures: list[Future[MtiScanResult | None]] = []
+        futures: list[Future[MtiDeviceDescriptor | None]] = []
         with ThreadPoolExecutor() as executor:
             for port_info in all_ports:
-                future: Future[MtiScanResult | None] = executor.submit(
+                future: Future[MtiDeviceDescriptor | None] = executor.submit(
                     _probe_port,
                     port_info.device,
                     baud,
@@ -138,26 +123,26 @@ class MtiDeviceScanner:
                 )
                 futures.append(future)
 
-        scan_results: list[MtiScanResult] = []
+        scan_results: list[MtiDeviceDescriptor] = []
         for future in futures:
-            probe_result: MtiScanResult | None = future.result()
+            probe_result: MtiDeviceDescriptor | None = future.result()
             if probe_result is not None:
                 scan_results.append(probe_result)
 
         with self._lock:
             self._results = dict()
-            scan_result: MtiScanResult
+            scan_result: MtiDeviceDescriptor
             for scan_result in scan_results:
                 self._results[scan_result.device_info.device_id] = scan_result
 
         return scan_results
 
-    def find(self, device_id: MtiDeviceID) -> MtiScanResult | None:
+    def find(self, device_id: MtiDeviceID) -> MtiDeviceDescriptor | None:
         """Return the cached scan result for a device ID, or None."""
         with self._lock:
             return self._results.get(device_id)
 
-    def results(self) -> list[MtiScanResult]:
+    def results(self) -> list[MtiDeviceDescriptor]:
         """Return a copy of all cached scan results."""
         with self._lock:
             return list(self._results.values())
@@ -182,7 +167,7 @@ def _probe_port(
     timeout: float = 2.0,
     vid: int | None = None,
     pid: int | None = None,
-) -> MtiScanResult | None:
+) -> MtiDeviceDescriptor | None:
     """
     Probe a single serial port for an XSens MTi device.
 
@@ -196,7 +181,7 @@ def _probe_port(
 
     Returns
     -------
-    An MtiScanResult if an MTi device responds, or None.
+    An MtiDeviceDescriptor if an MTi device responds, or None.
     """
     ser: serial.Serial | None = None
 
@@ -224,7 +209,7 @@ def _probe_port(
             f"FW: {device_info.firmware_version}  HW: {device_info.hardware_version}"
         )
 
-        return MtiScanResult(
+        return MtiDeviceDescriptor(
             port_info=MtiPortInfo(port=port, baud=baud, vid=vid, pid=pid),
             device_info=device_info,
         )

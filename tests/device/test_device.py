@@ -45,13 +45,13 @@ def _parse_message(mid: XbusMessageID, payload: bytes = b"") -> XbusMessage:
 
 def _make_device() -> MtiDevice:
     communicator = MagicMock(spec=MtiDeviceCommunicator)
-    device_id = MtiDeviceInfo(
+    communicator.device_info.return_value = MtiDeviceInfo(
         device_id=0x12345678,
         product_code="MTi-700",
         firmware_version="1.0.0",
         hardware_version="2.0",
     )
-    return MtiDevice(device_id=device_id, communicator=communicator)
+    return MtiDevice(communicator=communicator)
 
 
 class TestUpdateDispatch:

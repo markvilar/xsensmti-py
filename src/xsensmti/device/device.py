@@ -43,12 +43,10 @@ type ReadingCallbackRegistry = dict[ReadingType, ReadingCallback[Reading]]
 class MtiDevice:
     def __init__(
         self,
-        device_id: MtiDeviceInfo,
         communicator: MtiDeviceCommunicator,
         timeout: float = 5.0,
         buffer_size: int = 100,
     ) -> None:
-        self._device_id: MtiDeviceInfo = device_id
         self._communicator: MtiDeviceCommunicator = communicator
         self._timeout: float = timeout
         self._state_lock: threading.Lock = threading.Lock()
@@ -73,8 +71,8 @@ class MtiDevice:
 
     # --- Identity ---
 
-    def device_id(self) -> MtiDeviceInfo:
-        return self._device_id
+    def device_info(self) -> MtiDeviceInfo:
+        return self._communicator.device_info()
 
     # --- State ---
 
@@ -226,7 +224,7 @@ class MtiDevice:
     def _on_message(self, xbus_message: XbusMessage) -> None:
         message = MtiMessage(
             header=MtiMessageHeader(
-                device_id=self._device_id,
+                device_id=self._communicator.device_info(),
                 timestamp=datetime.now(tz=timezone.utc),
             ),
             xbus_message=xbus_message,
