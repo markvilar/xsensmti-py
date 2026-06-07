@@ -13,6 +13,7 @@ from xsensmti.device.datatypes import (
     MtiDeviceID,
     MtiDeviceInfo,
     MtiProbeResult,
+    MtiScanResult,
 )
 from xsensmti.device.port import MtiPortInfo
 
@@ -82,7 +83,7 @@ class MtiDeviceManager:
             self._thread.join()
             self._thread = None
         with self._lock:
-            devices = list(self._devices.values())
+            devices: list[MtiDevice] = list(self._devices.values())
             self._devices.clear()
             self._port_states.clear()
         for device in devices:
@@ -94,7 +95,7 @@ class MtiDeviceManager:
     def update(self) -> None:
         """Drain message buffers of all active devices and dispatch their callbacks."""
         with self._lock:
-            devices = list(self._devices.values())
+            devices: list[MtiDevice] = list(self._devices.values())
         for device in devices:
             device.update()
 
@@ -116,7 +117,7 @@ class MtiDeviceManager:
         The MtiDeviceInfo from the probe result, or None.
         """
         with self._lock:
-            probe_result = self._probe_results.get(device_id)
+            probe_result: MtiProbeResult | None = self._probe_results.get(device_id)
         return probe_result.device_info if probe_result is not None else None
 
     def get_port_info(self, device_id: MtiDeviceID) -> MtiPortInfo | None:
@@ -132,7 +133,7 @@ class MtiDeviceManager:
         The MtiPortInfo from the probe result, or None.
         """
         with self._lock:
-            probe_result = self._probe_results.get(device_id)
+            probe_result: MtiProbeResult | None = self._probe_results.get(device_id)
         return probe_result.port_info if probe_result is not None else None
 
     def __enter__(self) -> MtiDeviceManager:
@@ -151,14 +152,14 @@ class MtiDeviceManager:
                 break
 
     def _run_scan_cycle(self) -> None:
-        scan_results = scan_ports(baud=self._baud)
-        current_ports = {result.port_info.port for result in scan_results}
+        scan_results: list[MtiScanResult] = scan_ports(baud=self._baud)
+        current_ports: set[str] = {result.port_info.port for result in scan_results}
 
         with self._lock:
-            known_ports = set(self._port_states.keys())
+            known_ports: set[str] = set(self._port_states.keys())
 
-        disappeared_ports = known_ports - current_ports
-        appeared_ports = current_ports - known_ports
+        disappeared_ports: set[str] = known_ports - current_ports
+        appeared_ports: set[str] = current_ports - known_ports
 
         for port in disappeared_ports:
             self._handle_disappeared_port(port)
@@ -172,8 +173,12 @@ class MtiDeviceManager:
         if not port_infos_to_probe:
             return
 
-        probe_results = probe_ports(port_infos_to_probe, timeout=self._probe_timeout)
-        found_ports = {probe_result.port_info.port for probe_result in probe_results}
+        probe_results: list[MtiProbeResult] = probe_ports(
+            port_infos_to_probe, timeout=self._probe_timeout
+        )
+        found_ports: set[str] = {
+            probe_result.port_info.port for probe_result in probe_results
+        }
 
         for port_info in port_infos_to_probe:
             if port_info.port not in found_ports:
@@ -185,13 +190,13 @@ class MtiDeviceManager:
 
     def _handle_disappeared_port(self, port: str) -> None:
         with self._lock:
-            state = self._port_states.pop(port, None)
+            state: MtiPortState | None = self._port_states.pop(port, None)
 
         if state != MtiPortState.ACTIVE:
             return
 
         with self._lock:
-            device_id = next(
+            device_id: MtiDeviceID | None = next(
                 (
                     did
                     for did, probe_result in self._probe_results.items()
@@ -199,10 +204,10 @@ class MtiDeviceManager:
                 ),
                 None,
             )
-            device = (
+            device: MtiDevice | None = (
                 self._devices.pop(device_id, None) if device_id is not None else None
             )
-            probe_result = (
+            probe_result: MtiProbeResult | None = (
                 self._probe_results.get(device_id) if device_id is not None else None
             )
 
@@ -219,21 +224,21 @@ class MtiDeviceManager:
                 logger.warning(f"{port}: on_disconnect raised: {exc}")
 
     def _handle_new_device(self, probe_result: MtiProbeResult) -> None:
-        port = probe_result.port_info.port
+        port: str = probe_result.port_info.port
         try:
-            communicator = MtiDeviceCommunicator(
+            communicator: MtiDeviceCommunicator = MtiDeviceCommunicator(
                 port_info=probe_result.port_info,
                 device_info=probe_result.device_info,
                 timeout=self._probe_timeout,
             )
-            device = MtiDevice(communicator=communicator)
+            device: MtiDevice = MtiDevice(communicator=communicator)
         except Exception as exc:
             logger.warning(f"{port}: failed to open device: {exc}")
             with self._lock:
                 self._port_states[port] = MtiPortState.EMPTY
             return
 
-        device_id = probe_result.device_info.device_id
+        device_id: MtiDeviceID = probe_result.device_info.device_id
         with self._lock:
             self._probe_results[device_id] = probe_result
             self._devices[device_id] = device
