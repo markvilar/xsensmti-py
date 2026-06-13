@@ -1,4 +1,4 @@
-name: ubuntu
+name: windows
 
 on: [push, pull_request]
 
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     strategy:
       matrix:
@@ -29,16 +29,16 @@ jobs:
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
-    
+
     - name: Install the project
       run: uv sync --all-extras --dev
 
     - name: Build project
       run: uv build
-    
+
     - name: Run ruff check
       run: uv run ruff check src/ tests/
-  
+
     - name: Run ruff format
       run: uv run ruff format --check src/ tests/
 
