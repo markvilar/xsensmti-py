@@ -4,7 +4,6 @@ Data types for MtiDevice state and configuration responses.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
@@ -13,11 +12,32 @@ from xsensmti.mtdata2 import MtData2PacketID
 from xsensmti.xbus import XbusMessage
 
 
+type MtiDeviceID = int
 type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
 @dataclass(frozen=True)
-class MtiDeviceID:
+class MtiPortInfo:
+    """Connection parameters for a single MTi device."""
+
+    port: str
+    baud: int
+    vid: int | None = None
+    pid: int | None = None
+
+    @property
+    def is_usb(self) -> bool:
+        return self.vid is not None and self.pid is not None
+
+    @property
+    def usb_info(self) -> str | None:
+        if self.vid is None or self.pid is None:
+            return None
+        return f"VID:PID={self.vid:04X}:{self.pid:04X}"
+
+
+@dataclass(frozen=True)
+class MtiDeviceInfo:
     """Identifier for a MTi device."""
 
     device_id: int
@@ -27,10 +47,38 @@ class MtiDeviceID:
 
 
 @dataclass(frozen=True)
+class MtiScanResult:
+    """
+    Result of a single serial port scan.
+
+    Attributes
+    ----------
+    port_info: Connection parameters reported by the OS for this port.
+    """
+
+    port_info: MtiPortInfo
+
+
+@dataclass(frozen=True)
+class MtiProbeResult:
+    """
+    Result of probing a single serial port for an XSens MTi device.
+
+    Attributes
+    ----------
+    port_info: Connection parameters used during the probe.
+    device_info: Device identity queried during the probe.
+    """
+
+    port_info: MtiPortInfo
+    device_info: MtiDeviceInfo
+
+
+@dataclass(frozen=True)
 class MtiMessageHeader:
     """Receipt metadata for a single Xbus message."""
 
-    device_id: MtiDeviceID
+    device_id: MtiDeviceInfo
     timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
 
 
@@ -40,9 +88,6 @@ class MtiMessage:
 
     header: MtiMessageHeader
     xbus_message: XbusMessage
-
-
-type MessageCallback = Callable[[MtiMessage], None]
 
 
 class MtiDeviceState(IntEnum):

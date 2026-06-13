@@ -7,7 +7,9 @@ from __future__ import annotations
 import serial
 
 from collections.abc import Callable
+from xsensmti.device.datatypes import MtiPortInfo
 from xsensmti.serial import (
+    open_serial_port,
     send_and_receive as serial_send_and_receive,
     send_message,
 )
@@ -16,24 +18,48 @@ from xsensmti.xbus import (
     XbusMessageID,
     build_xbus_command,
 )
+from .datatypes import MtiDeviceInfo
 from .xbus_reader import XbusStreamReader
 
 
 class MtiDeviceCommunicator:
-    def __init__(self, ser: serial.Serial, timeout: float = 5.0) -> None:
-        self._ser: serial.Serial = ser
+    def __init__(
+        self,
+        port_info: MtiPortInfo,
+        device_info: MtiDeviceInfo,
+        timeout: float = 5.0,
+    ) -> None:
+        self._port_info: MtiPortInfo = port_info
+        self._device_info: MtiDeviceInfo = device_info
         self._timeout: float = timeout
         self._message_callback: Callable[[XbusMessage], None] | None = None
         self._error_callback: Callable[[Exception], None] | None = None
+        self._ser: serial.Serial = open_serial_port(
+            port_info.port,
+            port_info.baud,
+            read_timeout=0.1,
+        )
+        self._ser.reset_input_buffer()
         self._reader: XbusStreamReader = XbusStreamReader(
             ser=self._ser,
             on_message=self._dispatch_message,
             on_error=self._dispatch_error,
         )
+        try:
+            self.goto_config()
+        except Exception:
+            self._ser.close()
+            raise
 
     @property
     def port(self) -> str:
         return str(self._ser.port)
+
+    def port_info(self) -> MtiPortInfo:
+        return self._port_info
+
+    def device_info(self) -> MtiDeviceInfo:
+        return self._device_info
 
     # --- Callback registration ---
 
@@ -42,36 +68,6 @@ class MtiDeviceCommunicator:
 
     def set_error_callback(self, callback: Callable[[Exception], None]) -> None:
         self._error_callback = callback
-
-    # --- Identity queries ---
-
-    def get_device_id(self) -> int:
-        message: XbusMessage = self.send_and_receive(
-            build_xbus_command(XbusMessageID.REQ_DEVICE_ID),
-            expected_mid=XbusMessageID.DEVICE_ID,
-        )
-        return int.from_bytes(message.payload, "big")
-
-    def get_product_code(self) -> str:
-        message: XbusMessage = self.send_and_receive(
-            build_xbus_command(XbusMessageID.REQ_PRODUCT_CODE),
-            expected_mid=XbusMessageID.PRODUCT_CODE,
-        )
-        return message.payload.rstrip(b"\x00").decode("ascii", errors="replace")
-
-    def get_firmware_version(self) -> str:
-        message: XbusMessage = self.send_and_receive(
-            build_xbus_command(XbusMessageID.REQ_FIRMWARE_REVISION),
-            expected_mid=XbusMessageID.FIRMWARE_REVISION,
-        )
-        return f"{message.payload[0]}.{message.payload[1]}.{message.payload[2]}"
-
-    def get_hardware_version(self) -> str:
-        message: XbusMessage = self.send_and_receive(
-            build_xbus_command(XbusMessageID.REQ_HARDWARE_VERSION),
-            expected_mid=XbusMessageID.HARDWARE_VERSION,
-        )
-        return f"{message.payload[0]}.{message.payload[1]}"
 
     # --- Communication ---
 

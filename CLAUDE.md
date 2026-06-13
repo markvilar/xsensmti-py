@@ -194,6 +194,18 @@ XSens product documentation is available under `docs/xsens/`:
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
 
+### Definition order
+
+Keep public classes and functions closer to the top of the file, and private classes and functions further down. This is safe in Python since function bodies are resolved at call time, not definition time.
+
+### Dictionary initialization
+
+Use `dict()` rather than `{}` to initialize empty dictionaries. The `C408` ruff rule is not enabled in this project.
+
+## Git conventions
+
+Never reference Claude in git commit messages, pull requests, or issues. This includes `Co-Authored-By` trailers, body text, or any other attribution to Claude or Anthropic.
+
 ## GitHub issues
 
 When writing GitHub issue bodies via `gh issue create` or `gh issue edit`, use bare backticks (`` ` ``) for inline code and code fences. Do **not** escape them as `` \` `` — the shell heredoc passes the body verbatim to the API and escaped backticks will appear literally in the rendered issue.

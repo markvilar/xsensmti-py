@@ -7,9 +7,14 @@ from __future__ import annotations
 import threading
 
 from collections import deque
+from collections.abc import Callable
 from datetime import datetime, timezone
 from loguru import logger
-from xsensmti.mtdata2 import MtData2PacketID
+from xsensmti.mtdata2 import (
+    MtData2PacketID,
+    Reading,
+    decode_all_readings,
+)
 from xsensmti.xbus import (
     XbusMessage,
     XbusMessageID,
@@ -17,32 +22,38 @@ from xsensmti.xbus import (
 )
 from .communicator import MtiDeviceCommunicator
 from .datatypes import (
-    MessageCallback,
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
-    MtiDeviceID,
+    MtiDeviceInfo,
     MtiDeviceOptions,
     MtiDeviceOutputConfig,
     MtiDeviceState,
     MtiMessage,
     MtiMessageHeader,
+    MtiPortInfo,
 )
+
+
+type MessageCallback = Callable[[MtiMessage], None]
+type ReadingCallback[T: Reading] = Callable[[MtiMessageHeader, T], None]
+
+type ReadingType = type[Reading]
+type ReadingCallbackRegistry = dict[ReadingType, ReadingCallback[Reading]]
 
 
 class MtiDevice:
     def __init__(
         self,
-        device_id: MtiDeviceID,
         communicator: MtiDeviceCommunicator,
         timeout: float = 5.0,
         buffer_size: int = 100,
     ) -> None:
-        self._device_id: MtiDeviceID = device_id
         self._communicator: MtiDeviceCommunicator = communicator
         self._timeout: float = timeout
         self._state_lock: threading.Lock = threading.Lock()
         self._state_value: MtiDeviceState = MtiDeviceState.CONFIG
         self._on_message_callback: MessageCallback | None = None
+        self._reading_callbacks: ReadingCallbackRegistry = dict()
         self._callback_lock: threading.Lock = threading.Lock()
         self._buffer: deque[MtiMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
@@ -61,8 +72,11 @@ class MtiDevice:
 
     # --- Identity ---
 
-    def device_id(self) -> MtiDeviceID:
-        return self._device_id
+    def device_info(self) -> MtiDeviceInfo:
+        return self._communicator.device_info()
+
+    def port_info(self) -> MtiPortInfo:
+        return self._communicator.port_info()
 
     # --- State ---
 
@@ -76,15 +90,45 @@ class MtiDevice:
         with self._callback_lock:
             self._on_message_callback = callback
 
+    def set_on_reading[T: Reading](
+        self,
+        reading_type: type[T],
+        callback: ReadingCallback[T] | None,
+    ) -> None:
+        with self._callback_lock:
+            if callback is None:
+                self._reading_callbacks.pop(reading_type, None)  # type: ignore[arg-type]
+            else:
+                self._reading_callbacks[reading_type] = callback  # type: ignore[index, assignment]
+
     def update(self) -> None:
         with self._buffer_lock:
-            messages = list(self._buffer)
+            messages: list[MtiMessage] = list(self._buffer)
             self._buffer.clear()
         with self._callback_lock:
-            callback = self._on_message_callback
-        if callback is not None:
-            for message in messages:
-                callback(message)
+            message_callback: MessageCallback | None = self._on_message_callback
+            reading_callbacks: ReadingCallbackRegistry = dict(self._reading_callbacks)
+        for message in messages:
+            if message_callback is not None:
+                message_callback(message)
+            self._handle_readings(message, reading_callbacks)
+
+    def _handle_readings(
+        self,
+        message: MtiMessage,
+        reading_callbacks: ReadingCallbackRegistry,
+    ) -> None:
+        if not reading_callbacks or message.xbus_message.mid != XbusMessageID.MTDATA2:
+            return
+        for reading in decode_all_readings(message.xbus_message):
+            reading_type: type = type(reading)
+            if reading_type not in reading_callbacks:
+                continue
+            reading_callback: ReadingCallback[Reading] = reading_callbacks[reading_type]
+            reading_callback(message.header, reading)
+
+    def close(self) -> None:
+        self._communicator.close()
 
     def goto_config(self) -> None:
         self._communicator.goto_config()
@@ -187,7 +231,7 @@ class MtiDevice:
     def _on_message(self, xbus_message: XbusMessage) -> None:
         message = MtiMessage(
             header=MtiMessageHeader(
-                device_id=self._device_id,
+                device_id=self._communicator.device_info(),
                 timestamp=datetime.now(tz=timezone.utc),
             ),
             xbus_message=xbus_message,

@@ -15,6 +15,7 @@ from xsensmti.exceptions import (
     UnexpectedResponse,
     XsensError,
 )
+from xsensmti.device import MtiProbeResult, probe_ports, scan_ports
 from ..configurator import configure_device
 from ..configurator.presets import (
     OutputPreset,
@@ -24,27 +25,32 @@ from ..recorder import (
     RecordingResult,
     record_device,
 )
-from ..scanner import MtiScanResult, scan_ports
 
 
 def dispatch_scan_devices(baud: int, timeout: float, usb_only: bool) -> None:
     """Call the scanner and echo found MTi devices to stdout."""
-    results: list[MtiScanResult] = scan_ports(
-        baud=baud, timeout=timeout, usb_only=usb_only
-    )
+    port_infos = [r.port_info for r in scan_ports(baud=baud, usb_only=usb_only)]
+    scan_results: list[MtiProbeResult] = probe_ports(port_infos, timeout=timeout)
 
-    for result in results:
-        label: str = f"  product={result.product_code}" if result.product_code else ""
+    result: MtiProbeResult
+    for result in scan_results:
+        label: str = (
+            f"  product={result.device_info.product_code}"
+            if result.device_info.product_code
+            else ""
+        )
         usb: str = (
             f"  {result.port_info.usb_info}"
             if result.port_info.usb_info is not None
             else ""
         )
         click.echo(
-            f"{result.port_info.port}  device_id={result.device_id:#010x}  baud={result.port_info.baud}{label}{usb}"
+            f"{result.port_info.port}"
+            f"  device_id={result.device_info.device_id:#010x}"
+            f"  baud={result.port_info.baud}{label}{usb}"
         )
 
-    if not results:
+    if not scan_results:
         click.echo("No MTi devices found.")
 
 
