@@ -7,7 +7,7 @@ from __future__ import annotations
 import serial
 
 from collections.abc import Callable
-from xsensmti.device.port import MtiPortInfo
+from xsensmti.device.datatypes import MtiPortInfo
 from xsensmti.serial import (
     open_serial_port,
     send_and_receive as serial_send_and_receive,

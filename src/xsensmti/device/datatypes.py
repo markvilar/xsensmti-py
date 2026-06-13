@@ -9,12 +9,31 @@ from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 
 from xsensmti.mtdata2 import MtData2PacketID
-from xsensmti.device.port import MtiPortInfo
 from xsensmti.xbus import XbusMessage
 
 
 type MtiDeviceID = int
 type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
+
+
+@dataclass(frozen=True)
+class MtiPortInfo:
+    """Connection parameters for a single MTi device."""
+
+    port: str
+    baud: int
+    vid: int | None = None
+    pid: int | None = None
+
+    @property
+    def is_usb(self) -> bool:
+        return self.vid is not None and self.pid is not None
+
+    @property
+    def usb_info(self) -> str | None:
+        if self.vid is None or self.pid is None:
+            return None
+        return f"VID:PID={self.vid:04X}:{self.pid:04X}"
 
 
 @dataclass(frozen=True)

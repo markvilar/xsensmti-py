@@ -30,6 +30,7 @@ from .datatypes import (
     MtiDeviceState,
     MtiMessage,
     MtiMessageHeader,
+    MtiPortInfo,
 )
 
 
@@ -73,6 +74,9 @@ class MtiDevice:
 
     def device_info(self) -> MtiDeviceInfo:
         return self._communicator.device_info()
+
+    def port_info(self) -> MtiPortInfo:
+        return self._communicator.port_info()
 
     # --- State ---
 

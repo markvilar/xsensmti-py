@@ -10,7 +10,7 @@ import serial.tools.list_ports
 from concurrent.futures import Future, ThreadPoolExecutor
 from loguru import logger
 from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
-from xsensmti.device.port import MtiPortInfo
+from xsensmti.device.datatypes import MtiPortInfo
 from xsensmti.serial import open_serial_port, send_and_receive
 from xsensmti.xbus import (
     XbusMessage,
@@ -135,10 +135,10 @@ def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult |
         return MtiProbeResult(port_info=port_info, device_info=device_info)
 
     except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
-        logger.debug(f"{port_info.port}: no MTi device found")
+        logger.trace(f"{port_info.port}: no MTi device found")
         return None
     except (OSError, serial.SerialException) as exception:
-        logger.debug(f"{port_info.port}: could not open port: {exception}")
+        logger.trace(f"{port_info.port}: could not open port: {exception}")
         return None
     finally:
         if ser is not None:

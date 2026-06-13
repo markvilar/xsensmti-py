@@ -13,6 +13,7 @@ from .datatypes import (
     MtiDeviceState as MtiDeviceState,
     MtiMessage as MtiMessage,
     MtiMessageHeader as MtiMessageHeader,
+    MtiPortInfo as MtiPortInfo,
     MtiScanResult as MtiScanResult,
     MtiProbeResult as MtiProbeResult,
 )
@@ -20,10 +21,9 @@ from .manager import (
     ConnectCallback as ConnectCallback,
     DisconnectCallback as DisconnectCallback,
     MtiDeviceManager as MtiDeviceManager,
-    MtiPortState as MtiPortState,
+    MtiDeviceManagerConfig as MtiDeviceManagerConfig,
 )
 from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
-from .port import MtiPortInfo as MtiPortInfo
 from .device import (
     MtiDevice as MtiDevice,
     MessageCallback as MessageCallback,
