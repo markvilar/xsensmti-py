@@ -24,7 +24,7 @@ from .datatypes import MtiDeviceInfo, MtiPortInfo
 from .xbus_reader import XbusStreamReader
 
 
-type AsyncMessageCallback = Callable[[XbusMessage], Coroutine[Any, Any, None]]
+type AsyncXbusMessageCallback = Callable[[XbusMessage], Coroutine[Any, Any, None]]
 type AsyncErrorCallback = Callable[[Exception], Coroutine[Any, Any, None]]
 
 _QUEUE_MAX_SIZE: int = 256
@@ -60,7 +60,7 @@ class AsyncMtiDeviceCommunicator:
     _queue: asyncio.Queue[XbusMessage]
     _reader: XbusStreamReader
     _dispatch_task: asyncio.Task[None]
-    _message_callback: AsyncMessageCallback | None
+    _message_callback: AsyncXbusMessageCallback | None
     _error_callback: AsyncErrorCallback | None
 
     @classmethod
@@ -139,7 +139,7 @@ class AsyncMtiDeviceCommunicator:
 
     # --- Callback registration ---
 
-    def set_message_callback(self, callback: AsyncMessageCallback) -> None:
+    def set_message_callback(self, callback: AsyncXbusMessageCallback) -> None:
         self._message_callback = callback
 
     def set_error_callback(self, callback: AsyncErrorCallback) -> None:

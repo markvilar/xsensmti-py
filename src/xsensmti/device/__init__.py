@@ -42,7 +42,7 @@ from .scanner import (
 from .session import MtiSession as MtiSession
 from .async_communicator import (
     AsyncMtiDeviceCommunicator as AsyncMtiDeviceCommunicator,
-    AsyncMessageCallback as AsyncMessageCallback,
+    AsyncXbusMessageCallback as AsyncXbusMessageCallback,
     AsyncErrorCallback as AsyncErrorCallback,
 )
 from .async_device import (
