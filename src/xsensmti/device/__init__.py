@@ -23,7 +23,11 @@ from .manager import (
     MtiDeviceManager as MtiDeviceManager,
     MtiDeviceManagerConfig as MtiDeviceManagerConfig,
 )
-from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
+from .communicator import (
+    MtiDeviceCommunicator as MtiDeviceCommunicator,
+    XbusMessageCallback as XbusMessageCallback,
+    ErrorCallback as ErrorCallback,
+)
 from .device import (
     MtiDevice as MtiDevice,
     MessageCallback as MessageCallback,
