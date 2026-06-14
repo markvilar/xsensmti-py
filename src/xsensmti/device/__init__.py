@@ -45,6 +45,11 @@ from .async_communicator import (
     AsyncMessageCallback as AsyncMessageCallback,
     AsyncErrorCallback as AsyncErrorCallback,
 )
+from .async_device import (
+    AsyncMtiDevice as AsyncMtiDevice,
+    AsyncMtiMessageCallback as AsyncMtiMessageCallback,
+    AsyncReadingCallback as AsyncReadingCallback,
+)
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,
     XbusStreamReader as XbusStreamReader,
