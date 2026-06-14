@@ -33,12 +33,14 @@ from .datatypes import (
 
 
 type AsyncMtiMessageCallback = Callable[[MtiMessage], Coroutine[Any, Any, None]]
-type AsyncReadingCallback[T: Reading] = Callable[
+type AsyncMtiReadingCallback[T: Reading] = Callable[
     [MtiMessageHeader, T], Coroutine[Any, Any, None]
 ]
 
 type ReadingType = type[Reading]
-type AsyncReadingCallbackRegistry = dict[ReadingType, AsyncReadingCallback[Reading]]
+type AsyncMtiReadingCallbackRegistry = dict[
+    ReadingType, AsyncMtiReadingCallback[Reading]
+]
 
 
 class AsyncMtiDevice:
@@ -67,7 +69,7 @@ class AsyncMtiDevice:
         self._timeout: float = timeout
         self._state: MtiDeviceState = MtiDeviceState.CONFIG
         self._on_message_callback: AsyncMtiMessageCallback | None = None
-        self._reading_callbacks: AsyncReadingCallbackRegistry = dict()
+        self._reading_callbacks: AsyncMtiReadingCallbackRegistry = dict()
         self._communicator.set_message_callback(self._on_message)
         self._communicator.set_error_callback(self._on_reader_error)
 
@@ -106,7 +108,7 @@ class AsyncMtiDevice:
     def set_on_reading[T: Reading](
         self,
         reading_type: type[T],
-        callback: AsyncReadingCallback[T] | None,
+        callback: AsyncMtiReadingCallback[T] | None,
     ) -> None:
         """
         Register an async callback invoked for a specific reading type.
@@ -300,9 +302,9 @@ class AsyncMtiDevice:
             reading_type: type = type(reading)
             if reading_type not in self._reading_callbacks:
                 continue
-            reading_callback: AsyncReadingCallback[Reading] = self._reading_callbacks[
-                reading_type
-            ]
+            reading_callback: AsyncMtiReadingCallback[Reading] = (
+                self._reading_callbacks[reading_type]
+            )
             await reading_callback(message.header, reading)
 
     async def _on_reader_error(self, exc: Exception) -> None:
