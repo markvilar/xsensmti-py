@@ -23,7 +23,11 @@ from .manager import (
     MtiDeviceManager as MtiDeviceManager,
     MtiDeviceManagerConfig as MtiDeviceManagerConfig,
 )
-from .communicator import MtiDeviceCommunicator as MtiDeviceCommunicator
+from .communicator import (
+    MtiDeviceCommunicator as MtiDeviceCommunicator,
+    XbusMessageCallback as XbusMessageCallback,
+    ErrorCallback as ErrorCallback,
+)
 from .device import (
     MtiDevice as MtiDevice,
     MessageCallback as MessageCallback,
@@ -36,6 +40,21 @@ from .scanner import (
     probe_ports as probe_ports,
 )
 from .session import MtiSession as MtiSession
+from .async_communicator import (
+    AsyncMtiDeviceCommunicator as AsyncMtiDeviceCommunicator,
+    AsyncXbusMessageCallback as AsyncXbusMessageCallback,
+    AsyncErrorCallback as AsyncErrorCallback,
+)
+from .async_device import (
+    AsyncMtiDevice as AsyncMtiDevice,
+    AsyncMtiMessageCallback as AsyncMtiMessageCallback,
+    AsyncReadingCallback as AsyncReadingCallback,
+)
+from .async_device_manager import (
+    AsyncMtiDeviceManager as AsyncMtiDeviceManager,
+    AsyncConnectCallback as AsyncConnectCallback,
+    AsyncDisconnectCallback as AsyncDisconnectCallback,
+)
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,
     XbusStreamReader as XbusStreamReader,
