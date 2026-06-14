@@ -40,6 +40,11 @@ from .scanner import (
     probe_ports as probe_ports,
 )
 from .session import MtiSession as MtiSession
+from .async_communicator import (
+    AsyncMtiDeviceCommunicator as AsyncMtiDeviceCommunicator,
+    AsyncMessageCallback as AsyncMessageCallback,
+    AsyncErrorCallback as AsyncErrorCallback,
+)
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,
     XbusStreamReader as XbusStreamReader,
