@@ -50,6 +50,11 @@ from .async_device import (
     AsyncMtiMessageCallback as AsyncMtiMessageCallback,
     AsyncReadingCallback as AsyncReadingCallback,
 )
+from .async_device_manager import (
+    AsyncMtiDeviceManager as AsyncMtiDeviceManager,
+    AsyncConnectCallback as AsyncConnectCallback,
+    AsyncDisconnectCallback as AsyncDisconnectCallback,
+)
 from .xbus_reader import (
     XbusStreamReaderState as XbusStreamReaderState,
     XbusStreamReader as XbusStreamReader,
