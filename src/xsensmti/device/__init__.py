@@ -30,8 +30,8 @@ from .communicator import (
 )
 from .device import (
     MtiDevice as MtiDevice,
-    MessageCallback as MessageCallback,
-    ReadingCallback as ReadingCallback,
+    MtiMessageCallback as MtiMessageCallback,
+    MtiReadingCallback as MtiReadingCallback,
 )
 from .scanner import (
     scan_port as scan_port,
@@ -48,7 +48,7 @@ from .async_communicator import (
 from .async_device import (
     AsyncMtiDevice as AsyncMtiDevice,
     AsyncMtiMessageCallback as AsyncMtiMessageCallback,
-    AsyncReadingCallback as AsyncReadingCallback,
+    AsyncMtiReadingCallback as AsyncMtiReadingCallback,
 )
 from .async_device_manager import (
     AsyncMtiDeviceManager as AsyncMtiDeviceManager,

@@ -34,11 +34,11 @@ from .datatypes import (
 )
 
 
-type MessageCallback = Callable[[MtiMessage], None]
-type ReadingCallback[T: Reading] = Callable[[MtiMessageHeader, T], None]
+type MtiMessageCallback = Callable[[MtiMessage], None]
+type MtiReadingCallback[T: Reading] = Callable[[MtiMessageHeader, T], None]
 
 type ReadingType = type[Reading]
-type ReadingCallbackRegistry = dict[ReadingType, ReadingCallback[Reading]]
+type MtiReadingCallbackRegistry = dict[ReadingType, MtiReadingCallback[Reading]]
 
 
 class MtiDevice:
@@ -52,8 +52,8 @@ class MtiDevice:
         self._timeout: float = timeout
         self._state_lock: threading.Lock = threading.Lock()
         self._state_value: MtiDeviceState = MtiDeviceState.CONFIG
-        self._on_message_callback: MessageCallback | None = None
-        self._reading_callbacks: ReadingCallbackRegistry = dict()
+        self._on_message_callback: MtiMessageCallback | None = None
+        self._reading_callbacks: MtiReadingCallbackRegistry = dict()
         self._callback_lock: threading.Lock = threading.Lock()
         self._buffer: deque[MtiMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
@@ -86,14 +86,14 @@ class MtiDevice:
     def is_measuring(self) -> bool:
         return self._state == MtiDeviceState.MEASUREMENT
 
-    def set_on_message(self, callback: MessageCallback | None) -> None:
+    def set_on_message(self, callback: MtiMessageCallback | None) -> None:
         with self._callback_lock:
             self._on_message_callback = callback
 
     def set_on_reading[T: Reading](
         self,
         reading_type: type[T],
-        callback: ReadingCallback[T] | None,
+        callback: MtiReadingCallback[T] | None,
     ) -> None:
         with self._callback_lock:
             if callback is None:
@@ -106,8 +106,10 @@ class MtiDevice:
             messages: list[MtiMessage] = list(self._buffer)
             self._buffer.clear()
         with self._callback_lock:
-            message_callback: MessageCallback | None = self._on_message_callback
-            reading_callbacks: ReadingCallbackRegistry = dict(self._reading_callbacks)
+            message_callback: MtiMessageCallback | None = self._on_message_callback
+            reading_callbacks: MtiReadingCallbackRegistry = dict(
+                self._reading_callbacks
+            )
         for message in messages:
             if message_callback is not None:
                 message_callback(message)
@@ -116,7 +118,7 @@ class MtiDevice:
     def _handle_readings(
         self,
         message: MtiMessage,
-        reading_callbacks: ReadingCallbackRegistry,
+        reading_callbacks: MtiReadingCallbackRegistry,
     ) -> None:
         if not reading_callbacks or message.xbus_message.mid != XbusMessageID.MTDATA2:
             return
@@ -124,7 +126,9 @@ class MtiDevice:
             reading_type: type = type(reading)
             if reading_type not in reading_callbacks:
                 continue
-            reading_callback: ReadingCallback[Reading] = reading_callbacks[reading_type]
+            reading_callback: MtiReadingCallback[Reading] = reading_callbacks[
+                reading_type
+            ]
             reading_callback(message.header, reading)
 
     def close(self) -> None:
