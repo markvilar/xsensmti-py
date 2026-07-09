@@ -16,6 +16,8 @@ from .datatypes import (
     MtiPortInfo as MtiPortInfo,
     MtiScanResult as MtiScanResult,
     MtiProbeResult as MtiProbeResult,
+    Sample as Sample,
+    AnySample as AnySample,
 )
 from .manager import (
     ConnectCallback as ConnectCallback,
@@ -31,7 +33,7 @@ from .communicator import (
 from .device import (
     MtiDevice as MtiDevice,
     MtiMessageCallback as MtiMessageCallback,
-    MtiReadingCallback as MtiReadingCallback,
+    MtiSampleCallback as MtiSampleCallback,
 )
 from .scanner import (
     scan_port as scan_port,
@@ -48,7 +50,7 @@ from .async_communicator import (
 from .async_device import (
     AsyncMtiDevice as AsyncMtiDevice,
     AsyncMtiMessageCallback as AsyncMtiMessageCallback,
-    AsyncMtiReadingCallback as AsyncMtiReadingCallback,
+    AsyncMtiSampleCallback as AsyncMtiSampleCallback,
 )
 from .async_device_manager import (
     AsyncMtiDeviceManager as AsyncMtiDeviceManager,

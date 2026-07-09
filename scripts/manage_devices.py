@@ -40,7 +40,9 @@ from xsensmti.device import (
     show_default=True,
     help="Seconds to wait for each device response during probing.",
 )
-def main(baud: int, scan_interval: float, probe_interval: float, probe_timeout: float) -> None:
+def main(
+    baud: int, scan_interval: float, probe_interval: float, probe_timeout: float
+) -> None:
     """Discover and monitor XSens MTi devices on all serial ports."""
 
     def on_connect(device: MtiDevice) -> None:

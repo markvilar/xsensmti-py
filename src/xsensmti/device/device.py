@@ -11,9 +11,9 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from loguru import logger
 from xsensmti.mtdata2 import (
+    Measurement,
     MtData2PacketID,
-    Reading,
-    decode_all_readings,
+    decode_all_measurements,
 )
 from xsensmti.xbus import (
     XbusMessage,
@@ -31,14 +31,15 @@ from .datatypes import (
     MtiMessage,
     MtiMessageHeader,
     MtiPortInfo,
+    Sample,
 )
 
 
 type MtiMessageCallback = Callable[[MtiMessage], None]
-type MtiReadingCallback[T: Reading] = Callable[[MtiMessageHeader, T], None]
+type MtiSampleCallback[T: Measurement] = Callable[[Sample[T]], None]
 
-type ReadingType = type[Reading]
-type MtiReadingCallbackRegistry = dict[ReadingType, MtiReadingCallback[Reading]]
+type MeasurementType = type[Measurement]
+type MtiSampleCallbackRegistry = dict[MeasurementType, MtiSampleCallback[Measurement]]
 
 
 class MtiDevice:
@@ -53,7 +54,7 @@ class MtiDevice:
         self._state_lock: threading.Lock = threading.Lock()
         self._state_value: MtiDeviceState = MtiDeviceState.CONFIG
         self._on_message_callback: MtiMessageCallback | None = None
-        self._reading_callbacks: MtiReadingCallbackRegistry = dict()
+        self._measurement_callbacks: MtiSampleCallbackRegistry = dict()
         self._callback_lock: threading.Lock = threading.Lock()
         self._buffer: deque[MtiMessage] = deque(maxlen=buffer_size)
         self._buffer_lock: threading.Lock = threading.Lock()
@@ -90,16 +91,28 @@ class MtiDevice:
         with self._callback_lock:
             self._on_message_callback = callback
 
-    def set_on_reading[T: Reading](
+    def set_on_measurement[T: Measurement](
         self,
-        reading_type: type[T],
-        callback: MtiReadingCallback[T] | None,
+        measurement_type: type[T],
+        callback: MtiSampleCallback[T] | None,
     ) -> None:
+        """
+        Register a callback invoked for a specific measurement type.
+
+        You subscribe by measurement type (e.g. OrientationQuaternion) and the
+        callback receives that measurement wrapped in a Sample together with its
+        receipt metadata — i.e. Sample[T], not a bare T.
+
+        Arguments
+        ---------
+        measurement_type: The Measurement subclass to match (e.g. OrientationQuaternion).
+        callback: Callable receiving the Sample, or None to clear the registration.
+        """
         with self._callback_lock:
             if callback is None:
-                self._reading_callbacks.pop(reading_type, None)  # type: ignore[arg-type]
+                self._measurement_callbacks.pop(measurement_type, None)  # type: ignore[arg-type]
             else:
-                self._reading_callbacks[reading_type] = callback  # type: ignore[index, assignment]
+                self._measurement_callbacks[measurement_type] = callback  # type: ignore[index, assignment]
 
     def update(self) -> None:
         with self._buffer_lock:
@@ -107,29 +120,31 @@ class MtiDevice:
             self._buffer.clear()
         with self._callback_lock:
             message_callback: MtiMessageCallback | None = self._on_message_callback
-            reading_callbacks: MtiReadingCallbackRegistry = dict(
-                self._reading_callbacks
+            measurement_callbacks: MtiSampleCallbackRegistry = dict(
+                self._measurement_callbacks
             )
         for message in messages:
             if message_callback is not None:
                 message_callback(message)
-            self._handle_readings(message, reading_callbacks)
+            self._handle_measurements(message, measurement_callbacks)
 
-    def _handle_readings(
+    def _handle_measurements(
         self,
         message: MtiMessage,
-        reading_callbacks: MtiReadingCallbackRegistry,
+        measurement_callbacks: MtiSampleCallbackRegistry,
     ) -> None:
-        if not reading_callbacks or message.xbus_message.mid != XbusMessageID.MTDATA2:
+        if (
+            not measurement_callbacks
+            or message.xbus_message.mid != XbusMessageID.MTDATA2
+        ):
             return
-        for reading in decode_all_readings(message.xbus_message):
-            reading_type: type = type(reading)
-            if reading_type not in reading_callbacks:
+        for measurement in decode_all_measurements(message.xbus_message):
+            measurement_callback: MtiSampleCallback[Measurement] | None = (
+                measurement_callbacks.get(type(measurement))
+            )
+            if measurement_callback is None:
                 continue
-            reading_callback: MtiReadingCallback[Reading] = reading_callbacks[
-                reading_type
-            ]
-            reading_callback(message.header, reading)
+            measurement_callback(Sample(header=message.header, payload=measurement))
 
     def close(self) -> None:
         self._communicator.close()

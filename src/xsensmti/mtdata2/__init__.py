@@ -13,15 +13,15 @@ from .datatypes import (
 )
 from xsensmti.exceptions import UnexpectedXbusMessage as UnexpectedXbusMessage
 from .exceptions import (
-    InvalidReadingData as InvalidReadingData,
+    InvalidMeasurementData as InvalidMeasurementData,
     TruncatedPacket as TruncatedPacket,
 )
-from .reading_decode import (
-    ReadingDecoder as ReadingDecoder,
-    decode_all_readings as decode_all_readings,
-    decode_reading as decode_reading,
+from .measurement_decode import (
+    MeasurementDecoder as MeasurementDecoder,
+    decode_all_measurements as decode_all_measurements,
+    decode_measurement as decode_measurement,
 )
-from .readings import (
+from .measurement_types import (
     Acceleration as Acceleration,
     AltitudeEllipsoid as AltitudeEllipsoid,
     BaroPressure as BaroPressure,
@@ -36,14 +36,14 @@ from .readings import (
     PositionEcef as PositionEcef,
     PositionLLEllipsoid as PositionLLEllipsoid,
     RateOfTurn as RateOfTurn,
-    Reading as Reading,
+    Measurement as Measurement,
     SampleTimeFine as SampleTimeFine,
     StatusByte as StatusByte,
     StatusByteFlags as StatusByteFlags,
     StatusWord as StatusWord,
     StatusWordFlags as StatusWordFlags,
     Temperature as Temperature,
-    UnknownReading as UnknownReading,
+    UnknownMeasurement as UnknownMeasurement,
     UtcTime as UtcTime,
     VelocityNed as VelocityNed,
 )

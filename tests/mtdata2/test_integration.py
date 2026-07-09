@@ -21,7 +21,7 @@ from xsensmti.mtdata2 import (
     RateOfTurn,
     SampleTimeFine,
     StatusWord,
-    decode_all_readings,
+    decode_all_measurements,
     decode_mtdata2_packets_from_message,
 )
 
@@ -72,27 +72,29 @@ class TestRecordingReplay:
             )
             assert packet_ids in _EXPECTED_SHAPES
 
-    def test_all_readings_decode_without_error(self, mtdata2_messages) -> None:
+    def test_all_measurements_decode_without_error(self, mtdata2_messages) -> None:
         for message in mtdata2_messages:
-            readings = decode_all_readings(message)
-            assert len(readings) > 0
+            measurements = decode_all_measurements(message)
+            assert len(measurements) > 0
 
     def test_packet_counter_is_monotonically_increasing(self, mtdata2_messages) -> None:
         counters = []
         for message in mtdata2_messages:
-            for reading in decode_all_readings(message):
-                if isinstance(reading, PacketCounter):
-                    counters.append(reading.counter)
+            for measurement in decode_all_measurements(message):
+                if isinstance(measurement, PacketCounter):
+                    counters.append(measurement.counter)
         assert all(b > a for a, b in zip(counters, counters[1:]))
 
-    def test_imu_reading_types_match_expected(self, mtdata2_messages) -> None:
+    def test_imu_measurement_types_match_expected(self, mtdata2_messages) -> None:
         imu_message = next(
             m
             for m in mtdata2_messages
             if frozenset(p.data_id for p in decode_mtdata2_packets_from_message(m))
             == _IMU_PACKET_IDS
         )
-        types = {type(reading) for reading in decode_all_readings(imu_message)}
+        types = {
+            type(measurement) for measurement in decode_all_measurements(imu_message)
+        }
         assert types == {
             PacketCounter,
             SampleTimeFine,
@@ -102,12 +104,14 @@ class TestRecordingReplay:
             StatusWord,
         }
 
-    def test_gnss_reading_types_match_expected(self, mtdata2_messages) -> None:
+    def test_gnss_measurement_types_match_expected(self, mtdata2_messages) -> None:
         gnss_message = next(
             m
             for m in mtdata2_messages
             if frozenset(p.data_id for p in decode_mtdata2_packets_from_message(m))
             == _GNSS_PACKET_IDS
         )
-        types = {type(reading) for reading in decode_all_readings(gnss_message)}
+        types = {
+            type(measurement) for measurement in decode_all_measurements(gnss_message)
+        }
         assert types == {PacketCounter, SampleTimeFine, GnssPvt}

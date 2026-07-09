@@ -1,5 +1,5 @@
 """
-Decoders that unpack MtData2Packet.data bytes into typed reading dataclasses.
+Decoders that unpack MtData2Packet.data bytes into typed measurement dataclasses.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ from .datatypes import (
     MtData2Packet,
 )
 from .decode import iter_mtdata2_packets_from_message
-from .exceptions import InvalidReadingData
-from .readings import (
+from .exceptions import InvalidMeasurementData
+from .measurement_types import (
     Acceleration,
     AltitudeEllipsoid,
     BaroPressure,
@@ -31,37 +31,37 @@ from .readings import (
     PositionEcef,
     PositionLLEllipsoid,
     RateOfTurn,
-    Reading,
+    Measurement,
     SampleTimeFine,
     StatusByte,
     StatusByteFlags,
     StatusWord,
     StatusWordFlags,
     Temperature,
-    UnknownReading,
+    UnknownMeasurement,
     UtcTime,
     VelocityNed,
 )
 
 
-type ReadingDecoder = Callable[[MtData2Packet], Reading]
+type MeasurementDecoder = Callable[[MtData2Packet], Measurement]
 
 
-def decode_reading(packet: MtData2Packet) -> Reading:
+def decode_measurement(packet: MtData2Packet) -> Measurement:
     """
-    Decode an MtData2Packet into the appropriate typed reading dataclass.
+    Decode an MtData2Packet into the appropriate typed measurement dataclass.
 
-    Returns an UnknownReading for any XDI that has no registered decoder.
+    Returns an UnknownMeasurement for any XDI that has no registered decoder.
     """
     decoder = _DECODERS.get(packet.data_id)
     if decoder is None:
-        return UnknownReading(data_id=int(packet.data_id), data=packet.data)
+        return UnknownMeasurement(data_id=int(packet.data_id), data=packet.data)
     return decoder(packet)
 
 
-def decode_all_readings(message: XbusMessage) -> list[Reading]:
+def decode_all_measurements(message: XbusMessage) -> list[Measurement]:
     """
-    Decode all readings from an MTDATA2 XbusMessage.
+    Decode all measurements from an MTDATA2 XbusMessage.
 
     Arguments
     ---------
@@ -69,16 +69,17 @@ def decode_all_readings(message: XbusMessage) -> list[Reading]:
 
     Returns
     -------
-    A list of typed reading dataclasses, one per MTData2 packet in the payload.
+    A list of typed measurement dataclasses, one per MTData2 packet in the payload.
     """
     return [
-        decode_reading(packet) for packet in iter_mtdata2_packets_from_message(message)
+        decode_measurement(packet)
+        for packet in iter_mtdata2_packets_from_message(message)
     ]
 
 
 def _check_length(packet: MtData2Packet, expected: int) -> None:
     if len(packet.data) != expected:
-        raise InvalidReadingData(
+        raise InvalidMeasurementData(
             f"{packet.data_id.name} expects {expected} bytes, got {len(packet.data)}"
         )
 
@@ -367,7 +368,7 @@ def _decode_status_byte(packet: MtData2Packet) -> StatusByte:
     return StatusByte(status=StatusByteFlags(status))
 
 
-_DECODERS: dict[MtData2PacketID, ReadingDecoder] = {
+_DECODERS: dict[MtData2PacketID, MeasurementDecoder] = {
     MtData2PacketID.TEMPERATURE: _decode_temperature,
     MtData2PacketID.UTC_TIME: _decode_utc_time,
     MtData2PacketID.PACKET_COUNTER: _decode_packet_counter,
