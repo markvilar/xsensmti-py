@@ -83,6 +83,8 @@ After implementing changes, always run `uv run ruff check .`, `uv run ruff forma
 
 Always add type hints to variables, function arguments, and return types. Use the Python 3.12 `type` statement for type aliases: `type Alias = SomeType`.
 
+Exception: an alias that is used as a runtime dispatch token — passed as a value where mypy must infer a type parameter from it — must be a plain assignment (`AccelerationSample = Sample[Acceleration]`), not a `type` statement. A `type` statement produces a `TypeAliasType` that mypy rejects in value position and whose type argument cannot be recovered at runtime. The concrete `Sample` aliases in `device/sample_types.py` are the case in point.
+
 ### Variable names
 
 Prefer full words over abbreviations for variable names — use `message` not `msg`, `packet` not `pkt`, `result` not `res`, `error` not `err`, `config` not `cfg`, and so on. This applies to names of any length; three-character abbreviations are just as discouraged as one- or two-character ones. Exception: short or single-character names are acceptable for class member fields (e.g. `x`, `y`, `z`, `w` on a quaternion dataclass).

@@ -16,6 +16,31 @@ from .datatypes import (
     MtiPortInfo as MtiPortInfo,
     MtiScanResult as MtiScanResult,
     MtiProbeResult as MtiProbeResult,
+    Sample as Sample,
+)
+from .sample_types import (
+    AnySample as AnySample,
+    AccelerationSample as AccelerationSample,
+    AltitudeEllipsoidSample as AltitudeEllipsoidSample,
+    BaroPressureSample as BaroPressureSample,
+    DeltaQSample as DeltaQSample,
+    DeltaVSample as DeltaVSample,
+    FreeAccelerationSample as FreeAccelerationSample,
+    GnssPvtSample as GnssPvtSample,
+    MagneticFieldSample as MagneticFieldSample,
+    OrientationEulerSample as OrientationEulerSample,
+    OrientationQuaternionSample as OrientationQuaternionSample,
+    PacketCounterSample as PacketCounterSample,
+    PositionEcefSample as PositionEcefSample,
+    PositionLLEllipsoidSample as PositionLLEllipsoidSample,
+    RateOfTurnSample as RateOfTurnSample,
+    SampleTimeFineSample as SampleTimeFineSample,
+    StatusByteSample as StatusByteSample,
+    StatusWordSample as StatusWordSample,
+    TemperatureSample as TemperatureSample,
+    UnknownMeasurementSample as UnknownMeasurementSample,
+    UtcTimeSample as UtcTimeSample,
+    VelocityNedSample as VelocityNedSample,
 )
 from .manager import (
     ConnectCallback as ConnectCallback,
@@ -31,7 +56,7 @@ from .communicator import (
 from .device import (
     MtiDevice as MtiDevice,
     MtiMessageCallback as MtiMessageCallback,
-    MtiReadingCallback as MtiReadingCallback,
+    MtiSampleCallback as MtiSampleCallback,
 )
 from .scanner import (
     scan_port as scan_port,
@@ -48,7 +73,7 @@ from .async_communicator import (
 from .async_device import (
     AsyncMtiDevice as AsyncMtiDevice,
     AsyncMtiMessageCallback as AsyncMtiMessageCallback,
-    AsyncMtiReadingCallback as AsyncMtiReadingCallback,
+    AsyncMtiSampleCallback as AsyncMtiSampleCallback,
 )
 from .async_device_manager import (
     AsyncMtiDeviceManager as AsyncMtiDeviceManager,
