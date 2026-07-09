@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, get_args
 from loguru import logger
 from xsensmti.mtdata2 import (
     Measurement,
@@ -106,27 +106,28 @@ class AsyncMtiDevice:
         """
         self._on_message_callback = callback
 
-    def set_on_measurement[T: Measurement](
+    def set_on_sample[T: Measurement](
         self,
-        measurement_type: type[T],
+        sample_type: type[Sample[T]],
         callback: AsyncMtiSampleCallback[T] | None,
     ) -> None:
         """
-        Register an async callback invoked for a specific measurement type.
+        Register an async callback invoked for a specific Sample type.
 
-        You subscribe by measurement type (e.g. OrientationQuaternion) and the
-        callback receives that measurement wrapped in a Sample together with its
-        receipt metadata — i.e. Sample[T], not a bare T.
+        You subscribe by Sample type (e.g. OrientationQuaternionSample) and the
+        callback receives exactly that Sample — i.e. the registration type and
+        the received type are the same.
 
         Arguments
         ---------
-        measurement_type: The Measurement subclass to match (e.g. OrientationQuaternion).
+        sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
         callback: Async callable receiving the Sample, or None to clear the registration.
         """
+        measurement_type: type[Measurement] = get_args(sample_type)[0]
         if callback is None:
-            self._measurement_callbacks.pop(measurement_type, None)  # type: ignore[arg-type]
+            self._measurement_callbacks.pop(measurement_type, None)
         else:
-            self._measurement_callbacks[measurement_type] = callback  # type: ignore[index, assignment]
+            self._measurement_callbacks[measurement_type] = callback  # type: ignore[assignment]
 
     # --- State transitions ---
 

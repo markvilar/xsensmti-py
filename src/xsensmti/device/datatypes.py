@@ -108,9 +108,6 @@ class Sample[T: Measurement]:
     payload: T
 
 
-type AnySample = Sample[Measurement]
-
-
 class MtiDeviceState(IntEnum):
     CONFIG = 0
     MEASUREMENT = 1
