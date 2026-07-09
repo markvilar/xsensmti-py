@@ -8,7 +8,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 
-from xsensmti.mtdata2 import MtData2PacketID
+from xsensmti.mtdata2 import (
+    Measurement,
+    MtData2PacketID,
+)
 from xsensmti.xbus import XbusMessage
 
 
@@ -88,6 +91,21 @@ class MtiMessage:
 
     header: MtiMessageHeader
     xbus_message: XbusMessage
+
+
+@dataclass(frozen=True)
+class Sample[T: Measurement]:
+    """
+    A decoded measurement together with its receipt metadata.
+
+    Attributes
+    ----------
+    header: Receipt metadata for the Xbus message the measurement was decoded from.
+    payload: The decoded measurement.
+    """
+
+    header: MtiMessageHeader
+    payload: T
 
 
 class MtiDeviceState(IntEnum):

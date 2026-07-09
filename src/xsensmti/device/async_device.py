@@ -6,12 +6,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, get_args
 from loguru import logger
 from xsensmti.mtdata2 import (
+    Measurement,
     MtData2PacketID,
-    Reading,
-    decode_all_readings,
+    decode_all_measurements,
 )
 from xsensmti.xbus import (
     XbusMessage,
@@ -29,17 +29,18 @@ from .datatypes import (
     MtiMessage,
     MtiMessageHeader,
     MtiPortInfo,
+    Sample,
 )
 
 
 type AsyncMtiMessageCallback = Callable[[MtiMessage], Coroutine[Any, Any, None]]
-type AsyncMtiReadingCallback[T: Reading] = Callable[
-    [MtiMessageHeader, T], Coroutine[Any, Any, None]
+type AsyncMtiSampleCallback[T: Measurement] = Callable[
+    [Sample[T]], Coroutine[Any, Any, None]
 ]
 
-type ReadingType = type[Reading]
-type AsyncMtiReadingCallbackRegistry = dict[
-    ReadingType, AsyncMtiReadingCallback[Reading]
+type MeasurementType = type[Measurement]
+type AsyncMtiSampleCallbackRegistry = dict[
+    MeasurementType, AsyncMtiSampleCallback[Measurement]
 ]
 
 
@@ -69,7 +70,7 @@ class AsyncMtiDevice:
         self._timeout: float = timeout
         self._state: MtiDeviceState = MtiDeviceState.CONFIG
         self._on_message_callback: AsyncMtiMessageCallback | None = None
-        self._reading_callbacks: AsyncMtiReadingCallbackRegistry = dict()
+        self._measurement_callbacks: AsyncMtiSampleCallbackRegistry = dict()
         self._communicator.set_message_callback(self._on_message)
         self._communicator.set_error_callback(self._on_reader_error)
 
@@ -105,23 +106,28 @@ class AsyncMtiDevice:
         """
         self._on_message_callback = callback
 
-    def set_on_reading[T: Reading](
+    def set_on_sample[T: Measurement](
         self,
-        reading_type: type[T],
-        callback: AsyncMtiReadingCallback[T] | None,
+        sample_type: type[Sample[T]],
+        callback: AsyncMtiSampleCallback[T] | None,
     ) -> None:
         """
-        Register an async callback invoked for a specific reading type.
+        Register an async callback invoked for a specific Sample type.
+
+        You subscribe by Sample type (e.g. OrientationQuaternionSample) and the
+        callback receives exactly that Sample — i.e. the registration type and
+        the received type are the same.
 
         Arguments
         ---------
-        reading_type: The Reading subclass to match (e.g. OrientationQuaternion).
-        callback: Async callable receiving the message header and reading, or None to clear.
+        sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
+        callback: Async callable receiving the Sample, or None to clear the registration.
         """
+        measurement_type: type[Measurement] = get_args(sample_type)[0]
         if callback is None:
-            self._reading_callbacks.pop(reading_type, None)  # type: ignore[arg-type]
+            self._measurement_callbacks.pop(measurement_type, None)
         else:
-            self._reading_callbacks[reading_type] = callback  # type: ignore[index, assignment]
+            self._measurement_callbacks[measurement_type] = callback  # type: ignore[assignment]
 
     # --- State transitions ---
 
@@ -291,21 +297,22 @@ class AsyncMtiDevice:
         )
         if self._on_message_callback is not None:
             await self._on_message_callback(message)
-        await self._handle_readings(message)
+        await self._handle_measurements(message)
 
-    async def _handle_readings(self, message: MtiMessage) -> None:
-        if not self._reading_callbacks:
+    async def _handle_measurements(self, message: MtiMessage) -> None:
+        if not self._measurement_callbacks:
             return
         if message.xbus_message.mid != XbusMessageID.MTDATA2:
             return
-        for reading in decode_all_readings(message.xbus_message):
-            reading_type: type = type(reading)
-            if reading_type not in self._reading_callbacks:
-                continue
-            reading_callback: AsyncMtiReadingCallback[Reading] = (
-                self._reading_callbacks[reading_type]
+        for measurement in decode_all_measurements(message.xbus_message):
+            measurement_callback: AsyncMtiSampleCallback[Measurement] | None = (
+                self._measurement_callbacks.get(type(measurement))
             )
-            await reading_callback(message.header, reading)
+            if measurement_callback is None:
+                continue
+            await measurement_callback(
+                Sample(header=message.header, payload=measurement)
+            )
 
     async def _on_reader_error(self, exc: Exception) -> None:
         logger.error(f"{self._communicator.port}: reader error: {exc}")

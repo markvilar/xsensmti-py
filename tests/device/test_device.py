@@ -12,11 +12,13 @@ import pytest
 from unittest.mock import MagicMock
 
 from xsensmti.device import (
+    AccelerationSample,
     MtiDevice,
     MtiDeviceCommunicator,
     MtiDeviceInfo,
     MtiMessage,
-    MtiMessageHeader,
+    OrientationQuaternionSample,
+    Sample,
 )
 from xsensmti.mtdata2 import (
     Acceleration,
@@ -115,14 +117,14 @@ def _make_mtdata2_payload(*packets: tuple[MtData2PacketID, bytes]) -> bytes:
     return result
 
 
-class TestReadingCallbackDispatch:
-    def test_reading_callback_fires_for_mtdata2(self) -> None:
+class TestSampleCallbackDispatch:
+    def test_sample_callback_fires_for_mtdata2(self) -> None:
         device = _make_device()
-        received: list[tuple[MtiMessageHeader, OrientationQuaternion]] = []
+        received: list[Sample[OrientationQuaternion]] = []
 
-        device.set_on_reading(
-            OrientationQuaternion,
-            lambda header, reading: received.append((header, reading)),
+        device.set_on_sample(
+            OrientationQuaternionSample,
+            lambda sample: received.append(sample),
         )
 
         payload = _make_mtdata2_payload(
@@ -135,16 +137,17 @@ class TestReadingCallbackDispatch:
         device.update()
 
         assert len(received) == 1
-        header, quaternion = received[0]
-        assert isinstance(quaternion, OrientationQuaternion)
-        assert quaternion.w == 1.0
+        sample = received[0]
+        assert isinstance(sample.payload, OrientationQuaternion)
+        assert sample.payload.w == 1.0
+        assert sample.header.device_id.device_id == 0x12345678
 
-    def test_reading_callback_not_fired_for_non_mtdata2(self) -> None:
+    def test_sample_callback_not_fired_for_non_mtdata2(self) -> None:
         device = _make_device()
         received: list[object] = []
 
-        device.set_on_reading(
-            OrientationQuaternion, lambda header, r: received.append(r)
+        device.set_on_sample(
+            OrientationQuaternionSample, lambda sample: received.append(sample)
         )
 
         device._on_message(_parse_message(XbusMessageID.GOTOCONFIG_ACK))
@@ -152,13 +155,18 @@ class TestReadingCallbackDispatch:
 
         assert len(received) == 0
 
-    def test_multiple_reading_types_dispatched(self) -> None:
+    def test_multiple_sample_types_dispatched(self) -> None:
         device = _make_device()
         quaternions: list[OrientationQuaternion] = []
         accelerations: list[Acceleration] = []
 
-        device.set_on_reading(OrientationQuaternion, lambda h, r: quaternions.append(r))
-        device.set_on_reading(Acceleration, lambda h, r: accelerations.append(r))
+        device.set_on_sample(
+            OrientationQuaternionSample,
+            lambda sample: quaternions.append(sample.payload),
+        )
+        device.set_on_sample(
+            AccelerationSample, lambda sample: accelerations.append(sample.payload)
+        )
 
         payload = _make_mtdata2_payload(
             (
@@ -174,12 +182,14 @@ class TestReadingCallbackDispatch:
         assert len(accelerations) == 1
         assert accelerations[0].z == pytest.approx(9.81, rel=1e-5)
 
-    def test_reading_callback_removed_with_none(self) -> None:
+    def test_sample_callback_removed_with_none(self) -> None:
         device = _make_device()
         received: list[object] = []
 
-        device.set_on_reading(OrientationQuaternion, lambda h, r: received.append(r))
-        device.set_on_reading(OrientationQuaternion, None)
+        device.set_on_sample(
+            OrientationQuaternionSample, lambda sample: received.append(sample.payload)
+        )
+        device.set_on_sample(OrientationQuaternionSample, None)
 
         payload = _make_mtdata2_payload(
             (
@@ -192,13 +202,16 @@ class TestReadingCallbackDispatch:
 
         assert len(received) == 0
 
-    def test_message_and_reading_callbacks_coexist(self) -> None:
+    def test_message_and_sample_callbacks_coexist(self) -> None:
         device = _make_device()
         messages: list[object] = []
-        readings: list[object] = []
+        measurements: list[object] = []
 
         device.set_on_message(lambda m: messages.append(m))
-        device.set_on_reading(OrientationQuaternion, lambda h, r: readings.append(r))
+        device.set_on_sample(
+            OrientationQuaternionSample,
+            lambda sample: measurements.append(sample.payload),
+        )
 
         payload = _make_mtdata2_payload(
             (
@@ -210,13 +223,15 @@ class TestReadingCallbackDispatch:
         device.update()
 
         assert len(messages) == 1
-        assert len(readings) == 1
+        assert len(measurements) == 1
 
-    def test_unregistered_reading_type_not_dispatched(self) -> None:
+    def test_unregistered_sample_type_not_dispatched(self) -> None:
         device = _make_device()
         received: list[object] = []
 
-        device.set_on_reading(OrientationQuaternion, lambda h, r: received.append(r))
+        device.set_on_sample(
+            OrientationQuaternionSample, lambda sample: received.append(sample.payload)
+        )
 
         payload = _make_mtdata2_payload(
             (MtData2PacketID.ACCELERATION, struct.pack(">fff", 0.0, 0.0, 9.81)),

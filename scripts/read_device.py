@@ -2,7 +2,7 @@
 Read and display live data from an XSens MTi sensor using MtiSession.
 
 Opens the device, enters measurement mode, and prints decoded MTData2
-readings to stdout until Ctrl-C is pressed.
+measurements to stdout until Ctrl-C is pressed.
 """
 
 from __future__ import annotations
@@ -13,9 +13,9 @@ from loguru import logger
 from xsensmti.device import MtiDeviceInfo, MtiMessage
 from xsensmti.mtdata2 import (
     MtData2Packet,
-    Reading,
+    Measurement,
     decode_mtdata2_packets_from_message,
-    decode_reading,
+    decode_measurement,
 )
 from xsensmti.device import MtiPortInfo
 from xsensmti.device import MtiSession
@@ -59,16 +59,18 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
             packets: list[MtData2Packet] = decode_mtdata2_packets_from_message(
                 message.xbus_message
             )
-            readings: list[Reading] = []
+            measurements: list[Measurement] = []
             for packet in packets:
                 try:
-                    readings.append(decode_reading(packet))
+                    measurements.append(decode_measurement(packet))
                 except Exception:
                     pass
 
-            if readings:
+            if measurements:
                 timestamp: str = message.header.timestamp.isoformat()
-                summary: str = "  ".join(_format_reading(r) for r in readings)
+                summary: str = "  ".join(
+                    _format_measurement(measurement) for measurement in measurements
+                )
                 click.echo(f"[{received}] {timestamp}  {summary}")
 
             received += 1
@@ -86,8 +88,8 @@ def main(port: str, baud: int, timeout: float, count: int) -> None:
         logger.info(f"Received {received} packets.")
 
 
-def _format_reading(reading: Reading) -> str:
-    return repr(reading)
+def _format_measurement(measurement: Measurement) -> str:
+    return repr(measurement)
 
 
 if __name__ == "__main__":

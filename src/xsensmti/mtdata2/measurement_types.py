@@ -1,5 +1,5 @@
 """
-Typed dataclasses for decoded MTData2 sensor readings.
+Typed dataclasses for decoded MTData2 sensor measurements.
 
 Each type corresponds to one MtData2PacketID and holds physically
 meaningful values (degrees, metres, m/s, rad/s) rather than raw bytes.
@@ -263,14 +263,14 @@ class GnssPvt:
 
 
 @dataclass(frozen=True)
-class UnknownReading:
+class UnknownMeasurement:
     """Raw bytes for an MTData2 packet whose XDI has no registered decoder."""
 
     data_id: int
     data: bytes
 
 
-type Reading = (
+type Measurement = (
     Temperature
     | UtcTime
     | PacketCounter
@@ -291,5 +291,5 @@ type Reading = (
     | GnssPvt
     | StatusByte
     | StatusWord
-    | UnknownReading
+    | UnknownMeasurement
 )

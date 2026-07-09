@@ -9,7 +9,7 @@ class TruncatedPacket(Exception):
     pass
 
 
-class InvalidReadingData(Exception):
+class InvalidMeasurementData(Exception):
     """Raised when a packet's data bytes do not match the expected length for its XDI."""
 
     pass
