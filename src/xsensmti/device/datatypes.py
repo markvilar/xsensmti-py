@@ -81,7 +81,7 @@ class MtiProbeResult:
 class MtiMessageHeader:
     """Receipt metadata for a single Xbus message."""
 
-    device_id: MtiDeviceInfo
+    device_info: MtiDeviceInfo
     timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
 
 

@@ -140,7 +140,7 @@ class TestSampleCallbackDispatch:
         sample = received[0]
         assert isinstance(sample.payload, OrientationQuaternion)
         assert sample.payload.w == 1.0
-        assert sample.header.device_id.device_id == 0x12345678
+        assert sample.header.device_info.device_id == 0x12345678
 
     def test_sample_callback_not_fired_for_non_mtdata2(self) -> None:
         device = _make_device()
