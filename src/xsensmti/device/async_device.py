@@ -290,7 +290,7 @@ class AsyncMtiDevice:
     async def _on_message(self, xbus_message: XbusMessage) -> None:
         message: MtiMessage = MtiMessage(
             header=MtiMessageHeader(
-                device_id=self._communicator.device_info(),
+                device_info=self._communicator.device_info(),
                 timestamp=datetime.now(tz=timezone.utc),
             ),
             xbus_message=xbus_message,
