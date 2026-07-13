@@ -4,8 +4,10 @@ Data types for MtiDevice state and configuration responses.
 
 from __future__ import annotations
 
+import re
+
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 
@@ -171,18 +173,47 @@ class MtiDeviceOptions:
             enable_continuous_zru=_Flags.ENABLE_CONTINUOUS_ZRU in flags,
         )
 
+    def to_payload(self) -> bytes:
+        """
+        Encode the options as an OPTION_FLAGS payload.
+
+        The payload is 8 bytes: a 32-bit SetFlags mask followed by a 32-bit
+        ClearFlags mask. The device leaves a flag untouched when its bit is zero
+        in both masks, so every field is written explicitly — set bits for the
+        fields that are True, clear bits for the fields that are False. This
+        makes the write an absolute state, matching what from_payload() returns.
+        """
+        set_flags: int = 0
+        clear_flags: int = 0
+        for field_name, flag in _OPTION_FLAG_FIELDS:
+            if getattr(self, field_name):
+                set_flags |= flag
+            else:
+                clear_flags |= flag
+        return set_flags.to_bytes(4, "big") + clear_flags.to_bytes(4, "big")
+
 
 @dataclass(frozen=True)
 class MtiDeviceFilterProfile:
     """
-    Active filter profile parsed from the FILTER_PROFILE_ACK payload.
+    A filter profile, as reported by the device.
 
-    MTi 600-series devices use the modern method: the payload is an ASCII
-    label string (1–62 bytes), e.g. "Robust" or "Robust/VRU" for a
-    base-profile/heading-behaviour combination.
+    Filter profiles are predefined in device firmware; they cannot be created or
+    edited, only selected. AVAILABLE_FILTER_PROFILES_ACK reports all three fields
+    below for every device, so a profile is a uniform triple regardless of family.
 
-    Older devices (MTi 1/7/10/100/710) use the classic method: the payload
-    is 2 bytes — version (byte 0) and a numeric profile index (byte 1).
+    The FILTER_PROFILE_ACK payload is lossier and comes in two forms. MTi
+    600-series devices use the modern method: an ASCII label string (1–62 bytes),
+    e.g. "Robust" or "Robust/VRU" for a base-profile/heading-behaviour
+    combination. Older devices (MTi 1/7/10/100/710) use the classic method:
+    a 16-bit profile type and nothing else — no label, no version. Pass the
+    result through resolve_filter_profile() to fill those in.
+
+    Attributes
+    ----------
+    label: Profile label, empty when a classic payload has not been resolved.
+    version: Profile version, zero when a classic payload has not been resolved.
+    index: Numeric profile type, zero when the device reported a modern profile.
     """
 
     label: str
@@ -192,12 +223,103 @@ class MtiDeviceFilterProfile:
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceFilterProfile:
         if len(payload) == 2:
-            return cls(label="", version=payload[0], index=payload[1])
+            return cls(label="", version=0, index=int.from_bytes(payload, "big"))
         return cls(
             label=payload.decode("ascii").rstrip(),
             version=0,
             index=0,
         )
+
+    @classmethod
+    def list_from_payload(cls, payload: bytes) -> list[MtiDeviceFilterProfile]:
+        """
+        Parse the AVAILABLE_FILTER_PROFILES_ACK payload.
+
+        The payload always holds 5 slots of 22 bytes — type (1 byte), version
+        (1 byte), and a 20-byte space-padded label. Devices with fewer than 5
+        profiles report the remaining slots with a type of 0; those are skipped.
+        """
+        profiles: list[MtiDeviceFilterProfile] = []
+        for offset in range(0, len(payload), _FILTER_PROFILE_SLOT_SIZE):
+            slot: bytes = payload[offset : offset + _FILTER_PROFILE_SLOT_SIZE]
+            profile_type: int = slot[0]
+            if profile_type == 0:
+                continue
+            profiles.append(
+                cls(
+                    label=slot[2:].decode("ascii").rstrip(),
+                    version=slot[1],
+                    index=profile_type,
+                )
+            )
+        return profiles
+
+    def to_classic_payload(self) -> bytes:
+        """
+        Encode as the FILTER_PROFILE payload used by pre-600-series devices.
+
+        The payload is the 16-bit profile type. The version is not sent — it is
+        a property of the profile stored on the device, not part of the selection.
+        """
+        return self.index.to_bytes(2, "big")
+
+    def to_modern_payload(self) -> bytes:
+        """Encode as the ASCII FILTER_PROFILE payload used by 600-series devices."""
+        return self.label.encode("ascii")
+
+
+def resolve_filter_profile(
+    profile: MtiDeviceFilterProfile,
+    available: list[MtiDeviceFilterProfile],
+) -> MtiDeviceFilterProfile:
+    """
+    Fill in the fields the FILTER_PROFILE_ACK payload does not carry.
+
+    A classic payload reports only the profile type, and a modern payload only
+    the label. Look the profile up among those the device reports as available to
+    recover the full triple. Returns the profile unchanged if no match is found.
+
+    Arguments
+    ---------
+    profile: Profile parsed from a FILTER_PROFILE_ACK payload.
+    available: Profiles reported by AVAILABLE_FILTER_PROFILES_ACK.
+    """
+    if not profile.label:
+        for candidate in available:
+            if candidate.index == profile.index:
+                return candidate
+        return profile
+
+    for candidate in available:
+        if candidate.label == profile.label:
+            return candidate
+
+    # A tiered selection such as "Robust/VRU" combines two profiles, and only the
+    # base profile carries the type and version.
+    base_label, separator, _ = profile.label.partition("/")
+    if separator:
+        for candidate in available:
+            if candidate.label == base_label:
+                return replace(candidate, label=profile.label)
+    return profile
+
+
+def uses_modern_filter_profile(product_code: str) -> bool:
+    """
+    Return True if the device selects filter profiles by ASCII label.
+
+    SetFilterProfile has two incompatible payload formats sharing one message ID,
+    and the device does not advertise which it speaks. The MTi 600-series uses
+    the modern (label) form; every other family uses the classic (2-byte) form.
+
+    Arguments
+    ---------
+    product_code: Product code reported by the device, e.g. "MTi-G-700-2A5G4".
+    """
+    match: re.Match[str] | None = _MTI_MODEL_PATTERN.search(product_code)
+    if match is None:
+        return False
+    return int(match.group(1)) in _MODERN_FILTER_PROFILE_MODELS
 
 
 @dataclass(frozen=True)
@@ -294,3 +416,23 @@ class MtiDeviceOutputConfig:
 
 
 _OUTPUT_CONFIG_ENTRY_SIZE: int = 4
+
+_FILTER_PROFILE_SLOT_SIZE: int = 22
+
+_MTI_MODEL_PATTERN: re.Pattern[str] = re.compile(r"MTi-(?:G-)?(\d+)")
+
+_MODERN_FILTER_PROFILE_MODELS: frozenset[int] = frozenset({620, 630, 670, 680})
+
+_OPTION_FLAG_FIELDS: tuple[tuple[str, MtiDeviceOptionFlags], ...] = (
+    ("disable_auto_store", _Flags.DISABLE_AUTO_STORE),
+    ("disable_auto_measurement", _Flags.DISABLE_AUTO_MEASUREMENT),
+    ("enable_beidou", _Flags.ENABLE_BEIDOU),
+    ("enable_ahs", _Flags.ENABLE_AHS),
+    ("enable_orientation_smoother", _Flags.ENABLE_ORIENTATION_SMOOTHER),
+    ("enable_configurable_bus_id", _Flags.ENABLE_CONFIGURABLE_BUS_ID),
+    ("enable_in_run_compass_calibration", _Flags.ENABLE_IN_RUN_COMPASS_CALIBRATION),
+    ("enable_config_message_at_startup", _Flags.ENABLE_CONFIG_MESSAGE_AT_STARTUP),
+    ("enable_cold_filter_resets", _Flags.ENABLE_COLD_FILTER_RESETS),
+    ("enable_position_velocity_smoother", _Flags.ENABLE_POSITION_VELOCITY_SMOOTHER),
+    ("enable_continuous_zru", _Flags.ENABLE_CONTINUOUS_ZRU),
+)

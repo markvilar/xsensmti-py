@@ -29,6 +29,8 @@ from .datatypes import (
     MtiMessageHeader,
     MtiPortInfo,
     Sample,
+    resolve_filter_profile,
+    uses_modern_filter_profile,
 )
 
 
@@ -216,9 +218,28 @@ class AsyncMtiDevice:
         )
         return MtiDeviceOptions.from_payload(message.payload)
 
+    async def set_options(self, options: MtiDeviceOptions) -> None:
+        """
+        Set the device option flags.
+
+        Arguments
+        ---------
+        options: The option flags to apply. Every flag is written explicitly.
+        """
+        await self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.OPTION_FLAGS, options.to_payload()),
+            expected_mid=XbusMessageID.OPTION_FLAGS_ACK,
+            timeout=self._timeout,
+        )
+
     async def request_filter_profile(self) -> MtiDeviceFilterProfile:
         """
         Request and return the current filter profile.
+
+        The FILTER_PROFILE_ACK payload is incomplete — classic devices report only
+        the numeric profile type, modern devices only the label — so the profile is
+        resolved against the device's available profiles to recover the full triple.
+        This costs a second round trip.
 
         Returns
         -------
@@ -229,7 +250,55 @@ class AsyncMtiDevice:
             expected_mid=XbusMessageID.FILTER_PROFILE_ACK,
             timeout=self._timeout,
         )
-        return MtiDeviceFilterProfile.from_payload(message.payload)
+        profile: MtiDeviceFilterProfile = MtiDeviceFilterProfile.from_payload(
+            message.payload
+        )
+        available: list[
+            MtiDeviceFilterProfile
+        ] = await self.request_available_filter_profiles()
+        return resolve_filter_profile(profile, available)
+
+    async def set_filter_profile(self, profile: MtiDeviceFilterProfile) -> None:
+        """
+        Select one of the device's predefined filter profiles.
+
+        Pass a profile obtained from request_filter_profile() or
+        request_available_filter_profiles(). The profile is not validated here —
+        the device rejects an unknown one with an MtiDeviceError.
+
+        Arguments
+        ---------
+        profile: The filter profile to select.
+        """
+        await self._communicator.send_and_receive(
+            build_xbus_command(
+                XbusMessageID.FILTER_PROFILE, self._encode_filter_profile(profile)
+            ),
+            expected_mid=XbusMessageID.FILTER_PROFILE_ACK,
+            timeout=self._timeout,
+        )
+
+    async def request_available_filter_profiles(self) -> list[MtiDeviceFilterProfile]:
+        """
+        Request the filter profiles predefined in the device's firmware.
+
+        Returns
+        -------
+        The profiles the device supports, which are the valid arguments to
+        set_filter_profile().
+        """
+        message: XbusMessage = await self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.AVAILABLE_FILTER_PROFILES),
+            expected_mid=XbusMessageID.AVAILABLE_FILTER_PROFILES_ACK,
+            timeout=self._timeout,
+        )
+        return MtiDeviceFilterProfile.list_from_payload(message.payload)
+
+    def _encode_filter_profile(self, profile: MtiDeviceFilterProfile) -> bytes:
+        product_code: str = self._communicator.device_info().product_code
+        if uses_modern_filter_profile(product_code):
+            return profile.to_modern_payload()
+        return profile.to_classic_payload()
 
     async def request_config(self) -> MtiDeviceConfig:
         """
