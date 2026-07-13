@@ -9,7 +9,12 @@ import serial.tools.list_ports
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from loguru import logger
-from xsensmti.exceptions import CommandTimeout, DeviceNotFound, UnexpectedResponse
+from xsensmti.exceptions import (
+    CommandTimeout,
+    DeviceNotFound,
+    MtiDeviceError,
+    UnexpectedResponse,
+)
 from xsensmti.device.datatypes import MtiPortInfo
 from xsensmti.serial import open_serial_port, send_and_receive
 from xsensmti.xbus import (
@@ -22,6 +27,28 @@ from .datatypes import (
     MtiDeviceInfo,
     MtiProbeResult,
     MtiScanResult,
+)
+
+
+# Candidate baud rates for discovery, in probe order. This is a discovery policy
+# rather than a protocol constant: the default first, so the common case costs a
+# single attempt, then the plausible rates, with the exotic ones last.
+BAUD_RATES: tuple[int, ...] = (
+    115200,
+    921600,
+    460800,
+    230400,
+    57600,
+    38400,
+    19200,
+    9600,
+    4800,
+    76800,
+    28800,
+    14400,
+    2000000,
+    3500000,
+    4000000,
 )
 
 
@@ -91,6 +118,40 @@ def scan_ports(baud: int = 115200, usb_only: bool = False) -> list[MtiScanResult
     return results
 
 
+def discover_baudrate(port: str, timeout: float = 0.5) -> int | None:
+    """
+    Find a baud rate at which a device on a port responds.
+
+    A device cannot be asked its baud rate without already communicating at that
+    rate, so the candidate rates are probed in turn until one responds. Nothing
+    is written to the device.
+
+    On a serial link (RS-232/RS-422/RS-485, or a USB-to-serial converter) the
+    rate returned is the device's configured baud rate, because no other rate
+    will produce a response. On an MTi's native USB interface the link ignores
+    the baud rate entirely and every candidate responds, so the first is
+    returned; it is a rate the port can be opened at, not the device's stored
+    setting. Use request_baudrate() for the stored setting, which applies to the
+    device's serial interface.
+
+    Arguments
+    ---------
+    port: Serial port path, e.g. '/dev/ttyUSB0'.
+    timeout: Maximum seconds to wait for a response at each candidate rate.
+
+    Returns
+    -------
+    A baud rate in bps at which the device responds, or None if none did.
+    """
+    for baud in BAUD_RATES:
+        port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
+        if probe_port(port_info, timeout=timeout) is not None:
+            logger.debug(f"{port}: device responded at {baud} baud")
+            return baud
+        logger.trace(f"{port}: no response at {baud} baud")
+    return None
+
+
 def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult | None:
     """
     Probe a single serial port for an XSens MTi device.
@@ -134,7 +195,7 @@ def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult |
 
         return MtiProbeResult(port_info=port_info, device_info=device_info)
 
-    except (CommandTimeout, UnexpectedResponse, DeviceNotFound):
+    except (CommandTimeout, UnexpectedResponse, DeviceNotFound, MtiDeviceError):
         logger.trace(f"{port_info.port}: no MTi device found")
         return None
     except (OSError, serial.SerialException) as exception:

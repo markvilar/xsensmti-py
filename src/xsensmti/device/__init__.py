@@ -61,6 +61,8 @@ from .device import (
     MtiSampleCallback as MtiSampleCallback,
 )
 from .scanner import (
+    BAUD_RATES as BAUD_RATES,
+    discover_baudrate as discover_baudrate,
     scan_port as scan_port,
     scan_ports as scan_ports,
     probe_port as probe_port,
