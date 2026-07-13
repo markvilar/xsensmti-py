@@ -4,8 +4,7 @@ Output configuration presets for common MTi device types.
 
 from __future__ import annotations
 
-import struct
-
+from xsensmti.device import MtiDeviceOutputConfig
 from xsensmti.mtdata2 import MtData2PacketID
 
 type XdiRatePair = tuple[MtData2PacketID, int]
@@ -88,4 +87,4 @@ def build_output_configuration_payload(preset: OutputPreset) -> bytes:
 
     Each XDI/rate pair becomes 4 bytes: [XDI_HI, XDI_LO, RATE_HI, RATE_LO].
     """
-    return b"".join(struct.pack(">HH", int(xdi), rate) for xdi, rate in preset)
+    return MtiDeviceOutputConfig(rates=dict(preset)).to_payload()

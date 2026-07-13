@@ -13,7 +13,6 @@ from typing import get_args
 from loguru import logger
 from xsensmti.mtdata2 import (
     Measurement,
-    MtData2PacketID,
     decode_all_measurements,
 )
 from xsensmti.xbus import (
@@ -184,30 +183,19 @@ class MtiDevice:
     # --- Output configuration ---
 
     def set_output_config(self, config: MtiDeviceOutputConfig) -> None:
-        payload: bytes = b"".join(
-            int(odi).to_bytes(2, "big") + rate.to_bytes(2, "big")
-            for odi, rate in config
-        )
         self._communicator.send_and_receive(
-            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, payload),
+            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, config.to_payload()),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
 
-    def output_config(self) -> MtiDeviceOutputConfig:
+    def request_output_config(self) -> MtiDeviceOutputConfig:
         message: XbusMessage = self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
-        result: MtiDeviceOutputConfig = []
-        for i in range(0, len(message.payload), 4):
-            odi: MtData2PacketID = MtData2PacketID(
-                int.from_bytes(message.payload[i : i + 2], "big")
-            )
-            rate: int = int.from_bytes(message.payload[i + 2 : i + 4], "big")
-            result.append((odi, rate))
-        return result
+        return MtiDeviceOutputConfig.from_payload(message.payload)
 
     def request_options(self) -> MtiDeviceOptions:
         message: XbusMessage = self._communicator.send_and_receive(

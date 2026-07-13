@@ -10,7 +10,6 @@ from typing import Any, get_args
 from loguru import logger
 from xsensmti.mtdata2 import (
     Measurement,
-    MtData2PacketID,
     decode_all_measurements,
 )
 from xsensmti.xbus import (
@@ -179,39 +178,28 @@ class AsyncMtiDevice:
 
         Arguments
         ---------
-        config: List of (OutputDataIdentifier, rate) pairs to configure.
+        config: The MTData2 output configuration to apply.
         """
-        payload: bytes = b"".join(
-            int(odi).to_bytes(2, "big") + rate.to_bytes(2, "big")
-            for odi, rate in config
-        )
         await self._communicator.send_and_receive(
-            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, payload),
+            build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, config.to_payload()),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
 
-    async def output_config(self) -> MtiDeviceOutputConfig:
+    async def request_output_config(self) -> MtiDeviceOutputConfig:
         """
         Request and return the current MTData2 output configuration.
 
         Returns
         -------
-        List of (OutputDataIdentifier, rate) pairs currently configured.
+        The MTData2 output configuration currently set on the device.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
             timeout=self._timeout,
         )
-        result: MtiDeviceOutputConfig = []
-        for i in range(0, len(message.payload), 4):
-            odi: MtData2PacketID = MtData2PacketID(
-                int.from_bytes(message.payload[i : i + 2], "big")
-            )
-            rate: int = int.from_bytes(message.payload[i + 2 : i + 4], "big")
-            result.append((odi, rate))
-        return result
+        return MtiDeviceOutputConfig.from_payload(message.payload)
 
     async def request_options(self) -> MtiDeviceOptions:
         """

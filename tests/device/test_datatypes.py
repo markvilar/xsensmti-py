@@ -1,5 +1,6 @@
 """
-Tests for MtiDeviceOptions, MtiDeviceFilterProfile, and MtiDeviceConfig parsers.
+Tests for MtiDeviceOptions, MtiDeviceFilterProfile, MtiDeviceConfig, and
+MtiDeviceOutputConfig parsers.
 """
 
 import pytest
@@ -8,7 +9,9 @@ from xsensmti.device import (
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
     MtiDeviceOptions,
+    MtiDeviceOutputConfig,
 )
+from xsensmti.mtdata2 import MtData2PacketID
 
 
 # ---------------------------------------------------------------------------
@@ -146,3 +149,62 @@ def test_config_mti600_has_none_fields() -> None:
     assert config.output_skip_factor is None
     assert config.output_mode is None
     assert config.output_settings is None
+
+
+# ---------------------------------------------------------------------------
+# MtiDeviceOutputConfig
+# ---------------------------------------------------------------------------
+
+
+_OUTPUT_CONFIG_PAYLOAD: bytes = bytes.fromhex("1020006410600064402000c8")
+
+
+def test_output_config_parses_entries() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert len(config) == 3
+    assert config[MtData2PacketID.PACKET_COUNTER] == 100
+    assert config[MtData2PacketID.SAMPLE_TIME_FINE] == 100
+    assert config[MtData2PacketID.ACCELERATION] == 200
+
+
+def test_output_config_empty_payload() -> None:
+    config = MtiDeviceOutputConfig.from_payload(b"")
+    assert len(config) == 0
+    assert not config
+
+
+def test_output_config_round_trips_payload() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert config.to_payload() == _OUTPUT_CONFIG_PAYLOAD
+
+
+def test_output_config_contains() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert MtData2PacketID.ACCELERATION in config
+    assert MtData2PacketID.GNSS_PVT not in config
+
+
+def test_output_config_getitem_raises_for_missing_packet_id() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    with pytest.raises(KeyError):
+        config[MtData2PacketID.GNSS_PVT]
+
+
+def test_output_config_rate_for_returns_none_for_missing_packet_id() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert config.rate_for(MtData2PacketID.ACCELERATION) == 200
+    assert config.rate_for(MtData2PacketID.GNSS_PVT) is None
+
+
+def test_output_config_iterates_packet_id_rate_pairs() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert list(config) == [
+        (MtData2PacketID.PACKET_COUNTER, 100),
+        (MtData2PacketID.SAMPLE_TIME_FINE, 100),
+        (MtData2PacketID.ACCELERATION, 200),
+    ]
+
+
+def test_output_config_rate_of_ffff_is_preserved() -> None:
+    config = MtiDeviceOutputConfig.from_payload(bytes.fromhex("1010ffff"))
+    assert config[MtData2PacketID.UTC_TIME] == 0xFFFF

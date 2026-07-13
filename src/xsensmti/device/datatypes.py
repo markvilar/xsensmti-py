@@ -4,6 +4,7 @@ Data types for MtiDevice state and configuration responses.
 
 from __future__ import annotations
 
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
@@ -16,7 +17,6 @@ from xsensmti.xbus import XbusMessage
 
 
 type MtiDeviceID = int
-type MtiDeviceOutputConfig = list[tuple[MtData2PacketID, int]]
 
 
 @dataclass(frozen=True)
@@ -239,3 +239,58 @@ class MtiDeviceConfig:
             output_mode=int.from_bytes(payload[104:106], "big"),
             output_settings=int.from_bytes(payload[106:110], "big"),
         )
+
+
+@dataclass(frozen=True)
+class MtiDeviceOutputConfig:
+    """
+    MTData2 output configuration exchanged via the OUTPUT_CONFIGURATION message.
+
+    The payload is a sequence of 4-byte entries, each holding a 16-bit MTData2
+    packet ID followed by a 16-bit output rate in Hz. A rate of 0xFFFF means the
+    rate is ignored and the data accompanies every message.
+
+    Packet IDs carry the format and coordinate-frame bits, so the same quantity
+    in different coordinate frames are distinct entries.
+
+    Attributes
+    ----------
+    rates: Mapping from MTData2 packet ID to output rate in Hz.
+    """
+
+    rates: Mapping[MtData2PacketID, int]
+
+    @classmethod
+    def from_payload(cls, payload: bytes) -> MtiDeviceOutputConfig:
+        rates: dict[MtData2PacketID, int] = dict()
+        for offset in range(0, len(payload), _OUTPUT_CONFIG_ENTRY_SIZE):
+            packet_id: MtData2PacketID = MtData2PacketID(
+                int.from_bytes(payload[offset : offset + 2], "big")
+            )
+            rates[packet_id] = int.from_bytes(payload[offset + 2 : offset + 4], "big")
+        return cls(rates=rates)
+
+    def to_payload(self) -> bytes:
+        return b"".join(
+            int(packet_id).to_bytes(2, "big") + rate.to_bytes(2, "big")
+            for packet_id, rate in self.rates.items()
+        )
+
+    def rate_for(self, packet_id: MtData2PacketID) -> int | None:
+        """Return the output rate for a packet ID, or None if it is not configured."""
+        return self.rates.get(packet_id)
+
+    def __contains__(self, packet_id: object) -> bool:
+        return packet_id in self.rates
+
+    def __getitem__(self, packet_id: MtData2PacketID) -> int:
+        return self.rates[packet_id]
+
+    def __iter__(self) -> Iterator[tuple[MtData2PacketID, int]]:
+        return iter(self.rates.items())
+
+    def __len__(self) -> int:
+        return len(self.rates)
+
+
+_OUTPUT_CONFIG_ENTRY_SIZE: int = 4
