@@ -86,6 +86,24 @@ class XbusMessageID(IntEnum):
     MTDATA2 = 0x36
 
 
+class XbusErrorCode(IntEnum):
+    """
+    Error codes carried in the payload of an Xbus ERROR message.
+
+    These are Xbus protocol codes, not MTi-specific ones: they are a subset of
+    the XsResultValue enum used across the Xsens device range. A device may send
+    a code outside this enum, so callers should preserve unknown values rather
+    than reject them.
+    """
+
+    INVALID_PERIOD = 0x03
+    INVALID_MESSAGE = 0x04
+    TIMER_OVERFLOW = 0x1E
+    INVALID_BAUDRATE = 0x20
+    INVALID_PARAMETER = 0x21
+    DEVICE_ERROR = 0x28
+
+
 class XbusFraming(IntEnum):
     """Framing constants used by the Xbus wire format."""
 

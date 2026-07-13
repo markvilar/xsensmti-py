@@ -10,6 +10,7 @@ from .decode import (
 )
 from .datatypes import (
     PayloadLength as PayloadLength,
+    XbusErrorCode as XbusErrorCode,
     XbusFraming as XbusFraming,
     XbusMessage as XbusMessage,
     XbusMessageHeader as XbusMessageHeader,
