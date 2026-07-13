@@ -47,7 +47,7 @@ def main(port: str, baud: int, timeout: float) -> None:
         _print_identity(info)
         _print_config(device.request_config())
         _print_filter_profile(device.request_filter_profile())
-        _print_output_config(device.output_config())
+        _print_output_config(device.request_output_config())
         _print_options(device.request_options())
 
 
