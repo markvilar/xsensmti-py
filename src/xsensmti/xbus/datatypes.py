@@ -74,6 +74,10 @@ class XbusMessageID(IntEnum):
     FILTER_PROFILE = 0x64
     FILTER_PROFILE_ACK = 0x65
 
+    # Available filter profiles — read-only query
+    AVAILABLE_FILTER_PROFILES = 0x62
+    AVAILABLE_FILTER_PROFILES_ACK = 0x63
+
     # GNSS platform (MTi-700 / GNSS/INS) — empty payload = request, non-empty = set
     GNSS_PLATFORM = 0x76
     GNSS_PLATFORM_ACK = 0x77

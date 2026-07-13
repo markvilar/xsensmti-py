@@ -17,6 +17,8 @@ from .datatypes import (
     MtiScanResult as MtiScanResult,
     MtiProbeResult as MtiProbeResult,
     Sample as Sample,
+    resolve_filter_profile as resolve_filter_profile,
+    uses_modern_filter_profile as uses_modern_filter_profile,
 )
 from .sample_types import (
     AnySample as AnySample,
