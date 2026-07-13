@@ -19,6 +19,7 @@ from xsensmti.xbus import (
 )
 from xsensmti.exceptions import (
     CommandTimeout,
+    MtiDeviceError,
     UnexpectedResponse,
 )
 
@@ -67,7 +68,8 @@ def receive_message(
 
     Accumulates bytes across reads so that partial frames are not lost.
     Raises CommandTimeout if the deadline passes without a matching message.
-    Raises UnexpectedResponse if ERROR (0x42) or WARNING (0x43) arrives instead.
+    Raises MtiDeviceError if the device replies with ERROR (0x42), carrying the
+    error code it reported. Raises UnexpectedResponse if WARNING (0x43) arrives.
     """
     port: str = ser.port or ""
     deadline: float = time.monotonic() + timeout
@@ -88,6 +90,9 @@ def receive_message(
 
                 if mid == expected_mid:
                     return message
+
+                if mid == XbusMessageID.ERROR and message.payload:
+                    raise MtiDeviceError.from_payload(message.payload)
 
                 if mid in (XbusMessageID.ERROR, XbusMessageID.WARNING):
                     raise UnexpectedResponse(expected=expected_mid, received=mid)
