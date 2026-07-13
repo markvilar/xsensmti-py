@@ -9,14 +9,17 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from xsensmti.device import (
+    BAUD_RATES,
     MtiPortInfo,
     MtiProbeResult,
     MtiScanResult,
+    discover_baudrate,
     probe_ports,
     scan_port,
     scan_ports,
 )
 from xsensmti.device.datatypes import MtiDeviceInfo
+from xsensmti.xbus import XbusBaudCode
 
 
 def _make_port_mock(
@@ -190,3 +193,67 @@ class TestProbePorts:
     def test_returns_empty_list_when_no_ports_given(self) -> None:
         results: list[MtiProbeResult] = probe_ports([])
         assert results == []
+
+
+# ---------------------------------------------------------------------------
+# Baud rate discovery
+# ---------------------------------------------------------------------------
+
+
+def test_baud_rates_probes_the_default_first() -> None:
+    """The overwhelmingly common case should cost a single attempt."""
+    assert BAUD_RATES[0] == 115200
+
+
+def test_baud_rates_are_unique() -> None:
+    assert len(BAUD_RATES) == len(set(BAUD_RATES))
+
+
+def test_every_candidate_rate_is_encodable() -> None:
+    """A rate we probe for must be one the protocol can actually express."""
+    encodable: set[int] = {code.to_rate() for code in XbusBaudCode}
+    assert set(BAUD_RATES) <= encodable
+
+
+def test_discover_baudrate_returns_the_rate_that_responds() -> None:
+    responding: int = 230400
+
+    def fake_probe(
+        port_info: MtiPortInfo, timeout: float = 2.0
+    ) -> MtiProbeResult | None:
+        if port_info.baud != responding:
+            return None
+        return MtiProbeResult(
+            port_info=port_info,
+            device_info=MtiDeviceInfo(
+                device_id=1,
+                product_code="MTi-G-700",
+                firmware_version="1.8.2",
+                hardware_version="1.0",
+            ),
+        )
+
+    with patch("xsensmti.device.scanner.probe_port", side_effect=fake_probe):
+        assert discover_baudrate("/dev/ttyUSB0") == responding
+
+
+def test_discover_baudrate_returns_none_when_nothing_responds() -> None:
+    with patch("xsensmti.device.scanner.probe_port", return_value=None) as probe:
+        assert discover_baudrate("/dev/ttyUSB0") is None
+    assert probe.call_count == len(BAUD_RATES)
+
+
+def test_discover_baudrate_stops_at_the_first_match() -> None:
+    """115200 is probed first, so the common case must cost one attempt."""
+    result = MtiProbeResult(
+        port_info=MtiPortInfo(port="/dev/ttyUSB0", baud=115200),
+        device_info=MtiDeviceInfo(
+            device_id=1,
+            product_code="MTi-G-700",
+            firmware_version="1.8.2",
+            hardware_version="1.0",
+        ),
+    )
+    with patch("xsensmti.device.scanner.probe_port", return_value=result) as probe:
+        assert discover_baudrate("/dev/ttyUSB0") == 115200
+    assert probe.call_count == 1

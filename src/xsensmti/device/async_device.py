@@ -13,6 +13,7 @@ from xsensmti.mtdata2 import (
     decode_all_measurements,
 )
 from xsensmti.xbus import (
+    XbusBaudCode,
     XbusMessage,
     XbusMessageID,
     build_xbus_command,
@@ -202,6 +203,24 @@ class AsyncMtiDevice:
             timeout=self._timeout,
         )
         return MtiDeviceOutputConfig.from_payload(message.payload)
+
+    async def request_baudrate(self) -> int:
+        """
+        Request the baud rate the device is configured to use, in bps.
+
+        Only answerable once communication is established — the request is itself
+        an Xbus message. Use discover_baudrate() when the rate is unknown.
+
+        Returns
+        -------
+        The configured baud rate in bps.
+        """
+        message: XbusMessage = await self._communicator.send_and_receive(
+            build_xbus_command(XbusMessageID.SET_BAUDRATE),
+            expected_mid=XbusMessageID.SET_BAUDRATE_ACK,
+            timeout=self._timeout,
+        )
+        return XbusBaudCode(message.payload[0]).to_rate()
 
     async def request_options(self) -> MtiDeviceOptions:
         """
