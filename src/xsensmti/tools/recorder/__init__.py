@@ -3,4 +3,7 @@ from .recorder import (
     record_device as record_device,
 )
 
-__all__ = []
+__all__: list[str] = [
+    "RecordingResult",
+    "record_device",
+]

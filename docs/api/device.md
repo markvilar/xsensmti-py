@@ -1,0 +1,3 @@
+# `xsensmti.device`
+
+::: xsensmti.device

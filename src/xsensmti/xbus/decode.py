@@ -22,8 +22,11 @@ def is_frame_checksum_valid(frame: bytes) -> bool:
     """
     Return True if a raw Xbus frame has a valid checksum.
 
-    According to the Xbus protocol the following must hold:
-     - The low byte of the sum of all bytes except the preamble must be zero.
+    Per the Xbus protocol, the low byte of the sum of all bytes except the
+    preamble must be zero.
+
+    Args:
+        frame: A complete Xbus frame, including preamble and checksum.
     """
     return (sum(frame[1:]) & 0xFF) == 0
 
@@ -31,6 +34,12 @@ def is_frame_checksum_valid(frame: bytes) -> bool:
 def decode_xbus_messages_from_buffer(buffer: bytes | bytearray) -> list[XbusMessage]:
     """
     Decode all Xbus messages found in a buffer.
+
+    Args:
+        buffer: Raw bytes, which may contain several messages and partial frames.
+
+    Returns:
+        The complete messages found, in the order they appear.
     """
     return list(iter_xbus_messages_from_buffer(buffer))
 
@@ -38,6 +47,12 @@ def decode_xbus_messages_from_buffer(buffer: bytes | bytearray) -> list[XbusMess
 def iter_xbus_messages_from_buffer(buffer: bytes | bytearray) -> Iterator[XbusMessage]:
     """
     Yield Xbus messages parsed from a buffer without modifying it.
+
+    Args:
+        buffer: Raw bytes, which may contain several messages and partial frames.
+
+    Yields:
+        Each complete message found, in the order it appears.
     """
     remaining: bytearray = bytearray(buffer)
 
@@ -74,6 +89,12 @@ def drain_xbus_messages(buffer: bytearray) -> list[XbusMessage]:
     preserved so the caller can append more data and call again.
 
     Parse errors (unknown MID, corrupt frames) are skipped silently.
+
+    Args:
+        buffer: Receive buffer. Consumed bytes are removed in-place.
+
+    Returns:
+        The complete messages parsed from the buffer.
     """
     messages: list[XbusMessage] = []
     offset: int = 0

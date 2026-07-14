@@ -24,6 +24,14 @@ def encode_xbus_message(
     Uses standard framing for payloads up to 254 bytes and extended framing
     for larger payloads. BID defaults to 0xFF (broadcast), which is correct
     for all host-to-device commands.
+
+    Args:
+        mid: Message ID of the message to encode.
+        payload: Message payload, empty for a request.
+        bid: Bus ID.
+
+    Returns:
+        The complete frame, ready to write to the serial port.
     """
     return build_xbus_message(bid, XbusMessageID(mid), payload).to_bytes()
 
@@ -40,15 +48,13 @@ def build_xbus_message(
     for larger payloads. The checksum is computed identically to
     `encode_xbus_message`.
 
-    Arguments
-    ---------
-    bid:        Bus ID.
-    mid:        Message ID.
-    payload:    Payload bytes.
+    Args:
+        bid:        Bus ID.
+        mid:        Message ID.
+        payload:    Payload bytes.
 
-    Returns
-    -------
-    An XbusMessage with a valid checksum.
+    Returns:
+        An XbusMessage with a valid checksum.
     """
     if len(payload) > PayloadLength.MAX_EXT:
         raise ValueError(
@@ -100,14 +106,12 @@ def build_xbus_command(
     Convenience wrapper around `build_xbus_message` with the bus ID defaulting
     to 0xFF (master device), which is correct for all host-to-device commands.
 
-    Arguments
-    ---------
-    mid:        Message ID of the command.
-    payload:    Command payload bytes.
-    bid:        Bus ID (default 0xFF for the master device).
+    Args:
+        mid:        Message ID of the command.
+        payload:    Command payload bytes.
+        bid:        Bus ID (default 0xFF for the master device).
 
-    Returns
-    -------
-    An XbusMessage with a valid checksum, ready to pass to the communicator.
+    Returns:
+        An XbusMessage with a valid checksum, ready to pass to the communicator.
     """
     return build_xbus_message(bid, mid, payload)

@@ -91,7 +91,11 @@ Prefer full words over abbreviations for variable names — use `message` not `m
 
 ### Docstrings
 
-Under "Arguments", "Returns", and "Attributes" section headers, add a line of hyphens and do not indent the descriptions.
+Use **Google style**: a section header ending in a colon (`Args:`, `Returns:`, `Attributes:`, `Raises:`), with the body indented beneath it.
+
+Do not use numpydoc-style hyphen underlines, and do not use `Arguments` as a header — neither is parsed by Griffe, the parser behind the API documentation, so the descriptions are lost or rendered as stray headings.
+
+Types are taken from the annotations, so do not repeat them in the docstring.
 
 ```python
 def send_and_receive(
@@ -102,15 +106,16 @@ def send_and_receive(
     """
     Send an Xbus message and wait for its acknowledgement.
 
-    Arguments
-    ---------
-    ser: Open serial port to write to and read from.
-    mid: Message ID of the command to send.
-    timeout: Maximum seconds to wait for a response.
+    Args:
+        ser: Open serial port to write to and read from.
+        mid: Message ID of the command to send.
+        timeout: Maximum seconds to wait for a response.
 
-    Returns
-    -------
-    The first matching XbusMessage received before the deadline.
+    Returns:
+        The first matching XbusMessage received before the deadline.
+
+    Raises:
+        CommandTimeout: If no matching message arrives before the deadline.
     """
 
 
@@ -119,10 +124,9 @@ class XbusMessage:
     """
     A parsed Xbus protocol message.
 
-    Attributes
-    ----------
-    mid: Message identifier.
-    payload: Raw payload bytes.
+    Attributes:
+        mid: Message identifier.
+        payload: Raw payload bytes.
     """
 
     mid: XbusMessageID
@@ -188,13 +192,29 @@ The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer
 
 The XSens MT SDK (C++) is available at https://github.com/markvilar/xsens-sdk — useful for understanding the reference architecture (`XsControl`, `XsDevice`, `XsCallback`, `XsDataPacket`) when making design decisions for this library.
 
-XSens product documentation is available under `docs/xsens/`:
+XSens product documentation is available under `vendor/xsens/`:
 
 - `xsens_mti_family_reference_manual.pdf` — MTi family reference manual
 - `xsens_mti_low_level_documentation.pdf` — low-level Xbus protocol documentation
-- `xsens_mti_600_series_user_manual.pdf` — MTi 600-series (includes MTi 700) user manual
+- `xsens_mti_600_series_user_manual.pdf` — MTi 600-series user manual (610/620/630/670/680; does **not** cover the MTi-700, which is a 100-series MkIV device)
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
+
+Where the PDFs and the SDK disagree, **trust the SDK**. The low-level PDF has been
+wrong on at least three points: the classic `SetFilterProfile` payload format, the
+`HighPerformanceEDR` filter profile type code, and baud code `0x0E`.
+
+### Repository layout for documentation
+
+| Directory | Contents | Published? |
+| --- | --- | --- |
+| `docs/` | MkDocs source for the public documentation site | Yes |
+| `notes/` | Internal working material — debugging write-ups, dev notes | No |
+| `vendor/` | Third-party material, i.e. the XSens PDFs | No |
+| `site/` | MkDocs build output (gitignored) | — |
+
+Keep the XSens PDFs out of `docs/`. MkDocs publishes everything under `docs/`, and
+the manuals are XSens copyrighted material — publishing them would be redistribution.
 
 ### Definition order
 

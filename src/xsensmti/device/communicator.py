@@ -43,11 +43,10 @@ class MtiDeviceCommunicator:
         """
         Open the serial port and put the device in config state.
 
-        Arguments
-        ---------
-        port_info: Connection parameters for the serial port to open.
-        device_info: Identity information for the device on this port.
-        timeout: Default timeout in seconds for Xbus send-and-receive calls.
+        Args:
+            port_info: Connection parameters for the serial port to open.
+            device_info: Identity information for the device on this port.
+            timeout: Default timeout in seconds for Xbus send-and-receive calls.
         """
         self._port_info: MtiPortInfo = port_info
         self._device_info: MtiDeviceInfo = device_info
@@ -90,9 +89,8 @@ class MtiDeviceCommunicator:
         """
         Register a callback invoked for each received XbusMessage.
 
-        Arguments
-        ---------
-        callback: Called from the XbusStreamReader thread with each message.
+        Args:
+            callback: Called from the XbusStreamReader thread with each message.
         """
         self._message_callback = callback
 
@@ -100,9 +98,8 @@ class MtiDeviceCommunicator:
         """
         Register a callback invoked when the reader thread faults.
 
-        Arguments
-        ---------
-        callback: Called from the XbusStreamReader thread with the raised exception.
+        Args:
+            callback: Called from the XbusStreamReader thread with the raised exception.
         """
         self._error_callback = callback
 
@@ -112,9 +109,8 @@ class MtiDeviceCommunicator:
         """
         Send an Xbus message without waiting for a response.
 
-        Arguments
-        ---------
-        message: The Xbus message to write to the serial port.
+        Args:
+            message: The Xbus message to write to the serial port.
         """
         send_message(self._ser, message)
 
@@ -127,15 +123,13 @@ class MtiDeviceCommunicator:
         """
         Send an Xbus message and wait for its acknowledgement.
 
-        Arguments
-        ---------
-        message: The Xbus message to send.
-        expected_mid: Message ID of the expected response.
-        timeout: Maximum seconds to wait for a response. Defaults to the communicator timeout.
+        Args:
+            message: The Xbus message to send.
+            expected_mid: Message ID of the expected response.
+            timeout: Maximum seconds to wait for a response. Defaults to the communicator timeout.
 
-        Returns
-        -------
-        The first matching XbusMessage received before the deadline.
+        Returns:
+            The first matching XbusMessage received before the deadline.
         """
         effective_timeout: float = timeout if timeout is not None else self._timeout
         return serial_send_and_receive(

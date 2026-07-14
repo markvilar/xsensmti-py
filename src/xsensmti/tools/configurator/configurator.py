@@ -34,6 +34,12 @@ def configure_device(
     Transitions the device to config mode, applies the output configuration,
     then returns it to measurement mode. Raises domain exceptions on failure;
     caller is responsible for handling them.
+
+    Args:
+        port: Serial port path of the device.
+        baud: Baud rate to connect at.
+        preset: XDI/rate pairs to apply as the output configuration.
+        timeout: Seconds to wait for each device response.
     """
     ser: serial.Serial | None = None
 

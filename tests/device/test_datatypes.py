@@ -1,5 +1,6 @@
 """
-Tests for MtiDeviceOptions, MtiDeviceFilterProfile, and MtiDeviceConfig parsers.
+Tests for MtiDeviceOptions, MtiDeviceFilterProfile, MtiDeviceConfig, and
+MtiDeviceOutputConfig parsers.
 """
 
 import pytest
@@ -7,8 +8,15 @@ import pytest
 from xsensmti.device import (
     MtiDeviceConfig,
     MtiDeviceFilterProfile,
+    MtiDeviceOptionFlags,
     MtiDeviceOptions,
+    MtiDeviceOutputConfig,
+    resolve_filter_profile,
+    uses_modern_filter_profile,
 )
+from xsensmti.mtdata2 import MtData2PacketID
+
+_ALL_OPTION_FLAGS: int = sum(MtiDeviceOptionFlags)
 
 
 # ---------------------------------------------------------------------------
@@ -79,10 +87,11 @@ def test_options_single_flag(flag: int, field: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_filter_profile_classic_two_bytes() -> None:
-    profile = MtiDeviceFilterProfile.from_payload(bytes([1, 39]))
-    assert profile.version == 1
+def test_filter_profile_classic_is_a_16_bit_type() -> None:
+    """The classic payload is a uint16 profile type — not a (version, type) pair."""
+    profile = MtiDeviceFilterProfile.from_payload(bytes([0, 39]))
     assert profile.index == 39
+    assert profile.version == 0
     assert profile.label == ""
 
 
@@ -146,3 +155,194 @@ def test_config_mti600_has_none_fields() -> None:
     assert config.output_skip_factor is None
     assert config.output_mode is None
     assert config.output_settings is None
+
+
+# ---------------------------------------------------------------------------
+# MtiDeviceOutputConfig
+# ---------------------------------------------------------------------------
+
+
+_OUTPUT_CONFIG_PAYLOAD: bytes = bytes.fromhex("1020006410600064402000c8")
+
+
+def test_output_config_parses_entries() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert len(config) == 3
+    assert config[MtData2PacketID.PACKET_COUNTER] == 100
+    assert config[MtData2PacketID.SAMPLE_TIME_FINE] == 100
+    assert config[MtData2PacketID.ACCELERATION] == 200
+
+
+def test_output_config_empty_payload() -> None:
+    config = MtiDeviceOutputConfig.from_payload(b"")
+    assert len(config) == 0
+    assert not config
+
+
+def test_output_config_round_trips_payload() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert config.to_payload() == _OUTPUT_CONFIG_PAYLOAD
+
+
+def test_output_config_contains() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert MtData2PacketID.ACCELERATION in config
+    assert MtData2PacketID.GNSS_PVT not in config
+
+
+def test_output_config_getitem_raises_for_missing_packet_id() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    with pytest.raises(KeyError):
+        config[MtData2PacketID.GNSS_PVT]
+
+
+def test_output_config_rate_for_returns_none_for_missing_packet_id() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert config.rate_for(MtData2PacketID.ACCELERATION) == 200
+    assert config.rate_for(MtData2PacketID.GNSS_PVT) is None
+
+
+def test_output_config_iterates_packet_id_rate_pairs() -> None:
+    config = MtiDeviceOutputConfig.from_payload(_OUTPUT_CONFIG_PAYLOAD)
+    assert list(config) == [
+        (MtData2PacketID.PACKET_COUNTER, 100),
+        (MtData2PacketID.SAMPLE_TIME_FINE, 100),
+        (MtData2PacketID.ACCELERATION, 200),
+    ]
+
+
+def test_output_config_rate_of_ffff_is_preserved() -> None:
+    config = MtiDeviceOutputConfig.from_payload(bytes.fromhex("1010ffff"))
+    assert config[MtData2PacketID.UTC_TIME] == 0xFFFF
+
+
+# ---------------------------------------------------------------------------
+# MtiDeviceOptions.to_payload
+# ---------------------------------------------------------------------------
+
+
+def test_options_to_payload_is_eight_bytes() -> None:
+    options = MtiDeviceOptions.from_payload(_options_payload(0x00000000))
+    assert len(options.to_payload()) == 8
+
+
+def test_options_to_payload_sets_and_clears_every_flag() -> None:
+    """A zero bit in both masks leaves the flag untouched, so all flags are written."""
+    options = MtiDeviceOptions.from_payload(_options_payload(0x00000021))
+    payload = options.to_payload()
+    set_flags = int.from_bytes(payload[0:4], "big")
+    clear_flags = int.from_bytes(payload[4:8], "big")
+
+    assert set_flags == 0x00000021
+    assert clear_flags == _ALL_OPTION_FLAGS & ~0x00000021
+    assert set_flags & clear_flags == 0
+    assert set_flags | clear_flags == _ALL_OPTION_FLAGS
+
+
+def test_options_payload_round_trips_through_from_payload() -> None:
+    options = MtiDeviceOptions.from_payload(_options_payload(0x00000821))
+    set_flags = options.to_payload()[0:4]
+    assert MtiDeviceOptions.from_payload(set_flags) == options
+
+
+# ---------------------------------------------------------------------------
+# MtiDeviceFilterProfile — available profiles and encoding
+# ---------------------------------------------------------------------------
+
+
+def _profile_slot(profile_type: int, version: int, label: str) -> bytes:
+    return bytes([profile_type, version]) + label.ljust(20).encode("ascii")
+
+
+def test_available_filter_profiles_parses_populated_slots() -> None:
+    payload = (
+        _profile_slot(1, 3, "General")
+        + _profile_slot(2, 3, "GeneralNoBaro")
+        + _profile_slot(0, 0, "")
+        + _profile_slot(0, 0, "")
+        + _profile_slot(0, 0, "")
+    )
+    assert len(payload) == 110
+
+    profiles = MtiDeviceFilterProfile.list_from_payload(payload)
+    assert profiles == [
+        MtiDeviceFilterProfile(label="General", version=3, index=1),
+        MtiDeviceFilterProfile(label="GeneralNoBaro", version=3, index=2),
+    ]
+
+
+def test_available_filter_profiles_skips_empty_slots() -> None:
+    payload = _profile_slot(0, 0, "") * 5
+    assert MtiDeviceFilterProfile.list_from_payload(payload) == []
+
+
+def test_filter_profile_to_classic_payload_sends_type_as_uint16() -> None:
+    profile = MtiDeviceFilterProfile(label="General", version=17, index=1)
+    assert profile.to_classic_payload() == bytes([0x00, 0x01])
+
+
+def test_filter_profile_classic_payload_ignores_version() -> None:
+    """The same profile from either query must encode identically."""
+    from_active = MtiDeviceFilterProfile(label="", version=0, index=1)
+    from_available = MtiDeviceFilterProfile(label="General", version=17, index=1)
+    assert from_active.to_classic_payload() == from_available.to_classic_payload()
+
+
+def test_filter_profile_to_modern_payload() -> None:
+    profile = MtiDeviceFilterProfile(label="Robust/VRU", version=0, index=0)
+    assert profile.to_modern_payload() == b"Robust/VRU"
+
+
+@pytest.mark.parametrize(
+    ("product_code", "expected"),
+    [
+        ("MTi-G-700-2A5G4     ", False),
+        ("MTi-100", False),
+        ("MTi-710", False),
+        ("MTi-670", True),
+        ("MTi-680G", True),
+        ("MTi-620", True),
+        ("MTi-630", True),
+        ("", False),
+    ],
+)
+def test_uses_modern_filter_profile(product_code: str, expected: bool) -> None:
+    assert uses_modern_filter_profile(product_code) is expected
+
+
+# ---------------------------------------------------------------------------
+# resolve_filter_profile
+# ---------------------------------------------------------------------------
+
+
+_AVAILABLE: list[MtiDeviceFilterProfile] = [
+    MtiDeviceFilterProfile(label="General", version=17, index=1),
+    MtiDeviceFilterProfile(label="Automotive", version=17, index=4),
+    MtiDeviceFilterProfile(label="VRU", version=17, index=6),
+]
+
+
+def test_resolve_classic_profile_by_type() -> None:
+    """A classic ack carries only the type; label and version come from the list."""
+    active = MtiDeviceFilterProfile.from_payload(bytes([0x00, 0x04]))
+    resolved = resolve_filter_profile(active, _AVAILABLE)
+    assert resolved == MtiDeviceFilterProfile(label="Automotive", version=17, index=4)
+
+
+def test_resolve_modern_profile_by_label() -> None:
+    active = MtiDeviceFilterProfile.from_payload(b"General")
+    resolved = resolve_filter_profile(active, _AVAILABLE)
+    assert resolved == MtiDeviceFilterProfile(label="General", version=17, index=1)
+
+
+def test_resolve_tiered_profile_keeps_combined_label() -> None:
+    active = MtiDeviceFilterProfile.from_payload(b"General/VRU")
+    resolved = resolve_filter_profile(active, _AVAILABLE)
+    assert resolved.label == "General/VRU"
+    assert resolved.index == 1
+    assert resolved.version == 17
+
+
+def test_resolve_returns_profile_unchanged_when_no_match() -> None:
+    active = MtiDeviceFilterProfile.from_payload(bytes([0x00, 0x63]))
+    assert resolve_filter_profile(active, _AVAILABLE) == active

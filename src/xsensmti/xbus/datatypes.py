@@ -74,6 +74,10 @@ class XbusMessageID(IntEnum):
     FILTER_PROFILE = 0x64
     FILTER_PROFILE_ACK = 0x65
 
+    # Available filter profiles — read-only query
+    AVAILABLE_FILTER_PROFILES = 0x62
+    AVAILABLE_FILTER_PROFILES_ACK = 0x63
+
     # GNSS platform (MTi-700 / GNSS/INS) — empty payload = request, non-empty = set
     GNSS_PLATFORM = 0x76
     GNSS_PLATFORM_ACK = 0x77
@@ -84,6 +88,58 @@ class XbusMessageID(IntEnum):
 
     # MTData2
     MTDATA2 = 0x36
+
+
+class XbusErrorCode(IntEnum):
+    """
+    Error codes carried in the payload of an Xbus ERROR message.
+
+    These are Xbus protocol codes, not MTi-specific ones: they are a subset of
+    the XsResultValue enum used across the Xsens device range. A device may send
+    a code outside this enum, so callers should preserve unknown values rather
+    than reject them.
+    """
+
+    INVALID_PERIOD = 0x03
+    INVALID_MESSAGE = 0x04
+    TIMER_OVERFLOW = 0x1E
+    INVALID_BAUDRATE = 0x20
+    INVALID_PARAMETER = 0x21
+    DEVICE_ERROR = 0x28
+
+
+class XbusBaudCode(IntEnum):
+    """
+    Baud rate codes carried in the payload of an Xbus SET_BAUDRATE message.
+
+    These are Xbus protocol codes: the wire encoding of a baud rate, not the
+    baud rate itself. The mapping is not ordered, so it cannot be computed —
+    it is a lookup. A baud rate in bps is a plain int, as pyserial expects.
+
+    BAUD_921600 and BAUD_921600_LEGACY encode the same rate; the former requires
+    firmware 2.4.6 or later.
+    """
+
+    BAUD_460800 = 0x00
+    BAUD_230400 = 0x01
+    BAUD_115200 = 0x02
+    BAUD_76800 = 0x03
+    BAUD_57600 = 0x04
+    BAUD_38400 = 0x05
+    BAUD_28800 = 0x06
+    BAUD_19200 = 0x07
+    BAUD_14400 = 0x08
+    BAUD_9600 = 0x09
+    BAUD_921600 = 0x0A
+    BAUD_4800 = 0x0B
+    BAUD_2000000 = 0x0C
+    BAUD_4000000 = 0x0D
+    BAUD_3500000 = 0x0E
+    BAUD_921600_LEGACY = 0x80
+
+    def to_rate(self) -> int:
+        """Return the baud rate in bps that this code encodes."""
+        return _BAUD_CODE_RATES[self]
 
 
 class XbusFraming(IntEnum):
@@ -127,13 +183,12 @@ class XbusMessageHeader:
     """
     Resolved Xbus message header.
 
-    Attributes
-    ----------
-    preamble:       Fixed message preamble
-    bid:            Bus ID
-    mid:            Message ID
-    length:         Payload length marker
-    ext_length:     Extended payload length marker
+    Attributes:
+        preamble:       Fixed message preamble
+        bid:            Bus ID
+        mid:            Message ID
+        length:         Payload length marker
+        ext_length:     Extended payload length marker
     """
 
     preamble: int
@@ -176,11 +231,10 @@ class XbusMessage:
     """
     Parsed Xbus message with header, payload, and checksum.
 
-    Attributes
-    ----------
-    header:     Xbus message header
-    payload:    Payload or DATA field
-    checksum:   Checksum for the message
+    Attributes:
+        header:     Xbus message header
+        payload:    Payload or DATA field
+        checksum:   Checksum for the message
     """
 
     header: XbusMessageHeader
@@ -195,10 +249,9 @@ class XbusMessage:
         """
         Serialize the message to a complete Xbus frame ready for transmission.
 
-        Returns
-        -------
-        A bytes object containing the full wire-format frame: preamble, header,
-        payload, and checksum.
+        Returns:
+            A bytes object containing the full wire-format frame: preamble, header,
+            payload, and checksum.
         """
         if self.header.is_extended_message():
             ext_length: int = self.header.ext_length or 0
@@ -242,3 +295,23 @@ class XbusMessage:
         data.extend(self.payload)
         data.append(self.checksum)
         return (sum(data) & 0xFF) == 0
+
+
+_BAUD_CODE_RATES: dict[XbusBaudCode, int] = {
+    XbusBaudCode.BAUD_460800: 460800,
+    XbusBaudCode.BAUD_230400: 230400,
+    XbusBaudCode.BAUD_115200: 115200,
+    XbusBaudCode.BAUD_76800: 76800,
+    XbusBaudCode.BAUD_57600: 57600,
+    XbusBaudCode.BAUD_38400: 38400,
+    XbusBaudCode.BAUD_28800: 28800,
+    XbusBaudCode.BAUD_19200: 19200,
+    XbusBaudCode.BAUD_14400: 14400,
+    XbusBaudCode.BAUD_9600: 9600,
+    XbusBaudCode.BAUD_921600: 921600,
+    XbusBaudCode.BAUD_4800: 4800,
+    XbusBaudCode.BAUD_2000000: 2000000,
+    XbusBaudCode.BAUD_4000000: 4000000,
+    XbusBaudCode.BAUD_3500000: 3500000,
+    XbusBaudCode.BAUD_921600_LEGACY: 921600,
+}

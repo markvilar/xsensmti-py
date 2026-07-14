@@ -3,7 +3,13 @@
 ![ubuntu](https://github.com/markvilar/xsensmti-py/actions/workflows/ubuntu.yml/badge.svg)
 ![windows](https://github.com/markvilar/xsensmti-py/actions/workflows/windows.yml/badge.svg)
 ![macos](https://github.com/markvilar/xsensmti-py/actions/workflows/macos.yml/badge.svg)
+![docs](https://github.com/markvilar/xsensmti-py/actions/workflows/docs.yml/badge.svg)
 
+A Python library for working with XSens MTi sensors: the Xbus and MTData2 binary
+protocols, plus device communication and control.
+
+📖 **[Documentation](https://markvilar.github.io/xsensmti-py/)** — API reference and
+getting started guide.
 
 ### Getting started
 

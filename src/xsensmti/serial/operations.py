@@ -35,7 +35,11 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
     Fast path: send GOTOCONFIG and wait up to `timeout` seconds for ACK.
     Fallback: send RESET then retry GOTOCONFIG every 100 ms for up to
     _RECOVERY_TIMEOUT seconds. Devices typically become responsive ~1.7 s
-    after RESET (see docs/debug/mti_goto_config_mode_not_responding.md).
+    after RESET (see notes/debug/mti_gotoconfig_not_responding.md).
+
+    Args:
+        ser: Open serial port to the device.
+        timeout: Seconds to wait for the fast path before falling back to RESET.
     """
     try:
         send_and_receive(
@@ -102,7 +106,13 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
 
 
 def goto_measurement_mode(ser: serial.Serial, timeout: float) -> None:
-    """Transition the device to measurement mode."""
+    """
+    Transition the device to measurement mode.
+
+    Args:
+        ser: Open serial port to the device.
+        timeout: Seconds to wait for the acknowledgement.
+    """
     send_and_receive(
         ser,
         build_xbus_command(XbusMessageID.GOTOMEASUREMENT),

@@ -52,6 +52,12 @@ def decode_measurement(packet: MtData2Packet) -> Measurement:
     Decode an MtData2Packet into the appropriate typed measurement dataclass.
 
     Returns an UnknownMeasurement for any XDI that has no registered decoder.
+
+    Args:
+        packet: The MTData2 packet to decode.
+
+    Returns:
+        The typed measurement, or an UnknownMeasurement if the XDI has no decoder.
     """
     decoder = _DECODERS.get(packet.data_id)
     if decoder is None:
@@ -63,13 +69,11 @@ def decode_all_measurements(message: XbusMessage) -> list[Measurement]:
     """
     Decode all measurements from an MTDATA2 XbusMessage.
 
-    Arguments
-    ---------
-    message: An XbusMessage with MID MTDATA2.
+    Args:
+        message: An XbusMessage with MID MTDATA2.
 
-    Returns
-    -------
-    A list of typed measurement dataclasses, one per MTData2 packet in the payload.
+    Returns:
+        A list of typed measurement dataclasses, one per MTData2 packet in the payload.
     """
     return [
         decode_measurement(packet)

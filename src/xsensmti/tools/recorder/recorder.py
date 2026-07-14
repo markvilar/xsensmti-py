@@ -47,6 +47,16 @@ def record_device(
     then reads raw serial bytes in chunks and writes them to output. Stops
     cleanly on KeyboardInterrupt (Ctrl-C). Raises domain exceptions if the
     device handshake fails; caller is responsible for handling them.
+
+    Args:
+        port: Serial port path of the device.
+        output: Path of the binary file to write.
+        baud: Baud rate to connect at.
+        timeout: Seconds to wait for each device response.
+        chunk_size: Bytes to read per serial read.
+
+    Returns:
+        A summary of the recording session.
     """
     ser: serial.Serial | None = None
 
