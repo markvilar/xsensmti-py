@@ -3,6 +3,10 @@
 A Python library for working with XSens MTi sensors: the Xbus and MTData2 binary
 protocols, plus device communication and control.
 
+!!! info "Version"
+
+    This documentation describes **xsensmti {{ library_version }}**.
+
 ## Installation
 
 ```shell
