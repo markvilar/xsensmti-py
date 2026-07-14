@@ -183,13 +183,12 @@ class XbusMessageHeader:
     """
     Resolved Xbus message header.
 
-    Attributes
-    ----------
-    preamble:       Fixed message preamble
-    bid:            Bus ID
-    mid:            Message ID
-    length:         Payload length marker
-    ext_length:     Extended payload length marker
+    Attributes:
+        preamble:       Fixed message preamble
+        bid:            Bus ID
+        mid:            Message ID
+        length:         Payload length marker
+        ext_length:     Extended payload length marker
     """
 
     preamble: int
@@ -232,11 +231,10 @@ class XbusMessage:
     """
     Parsed Xbus message with header, payload, and checksum.
 
-    Attributes
-    ----------
-    header:     Xbus message header
-    payload:    Payload or DATA field
-    checksum:   Checksum for the message
+    Attributes:
+        header:     Xbus message header
+        payload:    Payload or DATA field
+        checksum:   Checksum for the message
     """
 
     header: XbusMessageHeader
@@ -251,10 +249,9 @@ class XbusMessage:
         """
         Serialize the message to a complete Xbus frame ready for transmission.
 
-        Returns
-        -------
-        A bytes object containing the full wire-format frame: preamble, header,
-        payload, and checksum.
+        Returns:
+            A bytes object containing the full wire-format frame: preamble, header,
+            payload, and checksum.
         """
         if self.header.is_extended_message():
             ext_length: int = self.header.ext_length or 0

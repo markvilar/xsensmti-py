@@ -106,10 +106,9 @@ class MtiDevice:
         callback receives exactly that Sample — i.e. the registration type and
         the received type are the same.
 
-        Arguments
-        ---------
-        sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
-        callback: Callable receiving the Sample, or None to clear the registration.
+        Args:
+            sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
+            callback: Callable receiving the Sample, or None to clear the registration.
         """
         measurement_type: type[Measurement] = get_args(sample_type)[0]
         with self._callback_lock:
@@ -256,9 +255,8 @@ class MtiDevice:
         request_available_filter_profiles(). The profile is not validated here —
         the device rejects an unknown one with an MtiDeviceError.
 
-        Arguments
-        ---------
-        profile: The filter profile to select.
+        Args:
+            profile: The filter profile to select.
         """
         self._communicator.send_and_receive(
             build_xbus_command(

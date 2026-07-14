@@ -16,10 +16,9 @@ class MtiDeviceError(XsensError):
     """
     Raised when the device replies with an Xbus ERROR message.
 
-    Attributes
-    ----------
-    code: Error code sent by the device, or the raw int if it is not a known code.
-    data: Any bytes following the error code (DEVICE_ERROR carries 5).
+    Attributes:
+        code: Error code sent by the device, or the raw int if it is not a known code.
+        data: Any bytes following the error code (DEVICE_ERROR carries 5).
     """
 
     def __init__(self, code: XbusErrorCode | int, data: bytes = b"") -> None:

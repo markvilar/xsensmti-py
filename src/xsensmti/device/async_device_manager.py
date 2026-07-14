@@ -46,11 +46,10 @@ class AsyncMtiDeviceManager:
         """
         Initialise the manager. Call `start()` or use as an async context manager to begin scanning.
 
-        Arguments
-        ---------
-        on_connect: Async callback invoked when a new device is opened.
-        on_disconnect: Async callback invoked when an active device disappears.
-        config: Tuning parameters for scanning and probing intervals.
+        Args:
+            on_connect: Async callback invoked when a new device is opened.
+            on_disconnect: Async callback invoked when an active device disappears.
+            config: Tuning parameters for scanning and probing intervals.
         """
         self._on_connect: AsyncConnectCallback = on_connect
         self._on_disconnect: AsyncDisconnectCallback | None = on_disconnect
@@ -108,13 +107,11 @@ class AsyncMtiDeviceManager:
         """
         Return the device info for an active device, or None if not found.
 
-        Arguments
-        ---------
-        device_id: Device ID to look up.
+        Args:
+            device_id: Device ID to look up.
 
-        Returns
-        -------
-        The MtiDeviceInfo for the device, or None.
+        Returns:
+            The MtiDeviceInfo for the device, or None.
         """
         device: AsyncMtiDevice | None = self._devices.get(device_id)
         return device.device_info() if device is not None else None
@@ -123,13 +120,11 @@ class AsyncMtiDeviceManager:
         """
         Return the port info for an active device, or None if not found.
 
-        Arguments
-        ---------
-        device_id: Device ID to look up.
+        Args:
+            device_id: Device ID to look up.
 
-        Returns
-        -------
-        The MtiPortInfo for the device, or None.
+        Returns:
+            The MtiPortInfo for the device, or None.
         """
         device: AsyncMtiDevice | None = self._devices.get(device_id)
         return device.port_info() if device is not None else None

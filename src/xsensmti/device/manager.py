@@ -31,12 +31,11 @@ class MtiDeviceManagerConfig:
     """
     Tuning parameters for MtiDeviceManager.
 
-    Attributes
-    ----------
-    scan_interval: Seconds between port scan cycles.
-    probe_interval: Seconds between probe cycles.
-    baud: Baud rate used when opening device ports.
-    probe_timeout: Seconds to wait for each Xbus response during probing.
+    Attributes:
+        scan_interval: Seconds between port scan cycles.
+        probe_interval: Seconds between probe cycles.
+        baud: Baud rate used when opening device ports.
+        probe_timeout: Seconds to wait for each Xbus response during probing.
     """
 
     scan_interval: float = 2.0
@@ -54,11 +53,10 @@ class MtiDeviceManager:
     devices. Fires callbacks when devices connect or disconnect. Ports that fail
     probing are retried on each probe cycle.
 
-    Attributes
-    ----------
-    on_connect: Called on the probe thread when a new device is opened.
-    on_disconnect: Called on the scan thread when an active device disappears.
-    config: Tuning parameters for scanning and probing.
+    Attributes:
+        on_connect: Called on the probe thread when a new device is opened.
+        on_disconnect: Called on the scan thread when an active device disappears.
+        config: Tuning parameters for scanning and probing.
     """
 
     def __init__(
@@ -127,13 +125,11 @@ class MtiDeviceManager:
         """
         Return the device info for an active device, or None if not found.
 
-        Arguments
-        ---------
-        device_id: Device ID to look up.
+        Args:
+            device_id: Device ID to look up.
 
-        Returns
-        -------
-        The MtiDeviceInfo for the device, or None.
+        Returns:
+            The MtiDeviceInfo for the device, or None.
         """
         with self._lock:
             device: MtiDevice | None = self._devices.get(device_id)
@@ -143,13 +139,11 @@ class MtiDeviceManager:
         """
         Return the port info for an active device, or None if not found.
 
-        Arguments
-        ---------
-        device_id: Device ID to look up.
+        Args:
+            device_id: Device ID to look up.
 
-        Returns
-        -------
-        The MtiPortInfo for the device, or None.
+        Returns:
+            The MtiPortInfo for the device, or None.
         """
         with self._lock:
             device = self._devices.get(device_id)

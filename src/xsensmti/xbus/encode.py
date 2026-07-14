@@ -40,15 +40,13 @@ def build_xbus_message(
     for larger payloads. The checksum is computed identically to
     `encode_xbus_message`.
 
-    Arguments
-    ---------
-    bid:        Bus ID.
-    mid:        Message ID.
-    payload:    Payload bytes.
+    Args:
+        bid:        Bus ID.
+        mid:        Message ID.
+        payload:    Payload bytes.
 
-    Returns
-    -------
-    An XbusMessage with a valid checksum.
+    Returns:
+        An XbusMessage with a valid checksum.
     """
     if len(payload) > PayloadLength.MAX_EXT:
         raise ValueError(
@@ -100,14 +98,12 @@ def build_xbus_command(
     Convenience wrapper around `build_xbus_message` with the bus ID defaulting
     to 0xFF (master device), which is correct for all host-to-device commands.
 
-    Arguments
-    ---------
-    mid:        Message ID of the command.
-    payload:    Command payload bytes.
-    bid:        Bus ID (default 0xFF for the master device).
+    Args:
+        mid:        Message ID of the command.
+        payload:    Command payload bytes.
+        bid:        Bus ID (default 0xFF for the master device).
 
-    Returns
-    -------
-    An XbusMessage with a valid checksum, ready to pass to the communicator.
+    Returns:
+        An XbusMessage with a valid checksum, ready to pass to the communicator.
     """
     return build_xbus_message(bid, mid, payload)

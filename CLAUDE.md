@@ -91,7 +91,11 @@ Prefer full words over abbreviations for variable names — use `message` not `m
 
 ### Docstrings
 
-Under "Arguments", "Returns", and "Attributes" section headers, add a line of hyphens and do not indent the descriptions.
+Use **Google style**: a section header ending in a colon (`Args:`, `Returns:`, `Attributes:`, `Raises:`), with the body indented beneath it.
+
+Do not use numpydoc-style hyphen underlines, and do not use `Arguments` as a header — neither is parsed by Griffe, the parser behind the API documentation, so the descriptions are lost or rendered as stray headings.
+
+Types are taken from the annotations, so do not repeat them in the docstring.
 
 ```python
 def send_and_receive(
@@ -102,15 +106,16 @@ def send_and_receive(
     """
     Send an Xbus message and wait for its acknowledgement.
 
-    Arguments
-    ---------
-    ser: Open serial port to write to and read from.
-    mid: Message ID of the command to send.
-    timeout: Maximum seconds to wait for a response.
+    Args:
+        ser: Open serial port to write to and read from.
+        mid: Message ID of the command to send.
+        timeout: Maximum seconds to wait for a response.
 
-    Returns
-    -------
-    The first matching XbusMessage received before the deadline.
+    Returns:
+        The first matching XbusMessage received before the deadline.
+
+    Raises:
+        CommandTimeout: If no matching message arrives before the deadline.
     """
 
 
@@ -119,10 +124,9 @@ class XbusMessage:
     """
     A parsed Xbus protocol message.
 
-    Attributes
-    ----------
-    mid: Message identifier.
-    payload: Raw payload bytes.
+    Attributes:
+        mid: Message identifier.
+        payload: Raw payload bytes.
     """
 
     mid: XbusMessageID

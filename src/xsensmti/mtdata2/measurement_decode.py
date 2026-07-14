@@ -63,13 +63,11 @@ def decode_all_measurements(message: XbusMessage) -> list[Measurement]:
     """
     Decode all measurements from an MTDATA2 XbusMessage.
 
-    Arguments
-    ---------
-    message: An XbusMessage with MID MTDATA2.
+    Args:
+        message: An XbusMessage with MID MTDATA2.
 
-    Returns
-    -------
-    A list of typed measurement dataclasses, one per MTData2 packet in the payload.
+    Returns:
+        A list of typed measurement dataclasses, one per MTData2 packet in the payload.
     """
     return [
         decode_measurement(packet)
