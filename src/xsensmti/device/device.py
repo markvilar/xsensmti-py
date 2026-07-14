@@ -46,12 +46,29 @@ type MtiSampleCallbackRegistry = dict[MeasurementType, MtiSampleCallback[Measure
 
 
 class MtiDevice:
+    """
+    Handle to a single connected XSens MTi sensor.
+
+    Wraps an MtiDeviceCommunicator and buffers incoming messages. Unlike
+    AsyncMtiDevice, callbacks do not fire on arrival: call update() to dispatch
+    the buffered messages from your own thread.
+    """
+
     def __init__(
         self,
         communicator: MtiDeviceCommunicator,
         timeout: float = 5.0,
         buffer_size: int = 100,
     ) -> None:
+        """
+        Wrap a communicator and register internal callbacks on it.
+
+        Args:
+            communicator: Open communicator for the device, already in config state.
+            timeout: Default timeout in seconds for Xbus send-and-receive calls.
+            buffer_size: Maximum messages held between update() calls. Older
+                messages are dropped once the buffer is full.
+        """
         self._communicator: MtiDeviceCommunicator = communicator
         self._timeout: float = timeout
         self._state_lock: threading.Lock = threading.Lock()
@@ -77,20 +94,32 @@ class MtiDevice:
     # --- Identity ---
 
     def device_info(self) -> MtiDeviceInfo:
+        """Return the identity information for the connected device."""
         return self._communicator.device_info()
 
     def port_info(self) -> MtiPortInfo:
+        """Return the connection parameters for this device's port."""
         return self._communicator.port_info()
 
     # --- State ---
 
     def device_state(self) -> MtiDeviceState:
+        """Return the device state as tracked by this library, without querying the device."""
         return self._state
 
     def is_measuring(self) -> bool:
+        """Return True if the device is in measurement state."""
         return self._state == MtiDeviceState.MEASUREMENT
 
     def set_on_message(self, callback: MtiMessageCallback | None) -> None:
+        """
+        Register a callback invoked for each received MtiMessage.
+
+        The callback fires from update(), not on arrival.
+
+        Args:
+            callback: Callable receiving the full MtiMessage, or None to clear.
+        """
         with self._callback_lock:
             self._on_message_callback = callback
 
@@ -118,6 +147,12 @@ class MtiDevice:
                 self._measurement_callbacks[measurement_type] = callback  # type: ignore[assignment]
 
     def update(self) -> None:
+        """
+        Dispatch buffered messages to the registered callbacks.
+
+        Call this regularly from the thread that should run the callbacks. The
+        buffer is drained on each call.
+        """
         with self._buffer_lock:
             messages: list[MtiMessage] = list(self._buffer)
             self._buffer.clear()
@@ -150,19 +185,23 @@ class MtiDevice:
             measurement_callback(Sample(header=message.header, payload=measurement))
 
     def close(self) -> None:
+        """Close the communicator and release the serial port."""
         self._communicator.close()
 
     def goto_config(self) -> None:
+        """Put the device in config state, where its settings can be read and written."""
         self._communicator.goto_config()
         self._state = MtiDeviceState.CONFIG
         logger.debug(f"{self._communicator.port}: entered config mode")
 
     def goto_measurement(self) -> None:
+        """Put the device in measurement state, where it streams MTData2 messages."""
         self._communicator.goto_measurement()
         self._state = MtiDeviceState.MEASUREMENT
         logger.debug(f"{self._communicator.port}: entered measurement mode")
 
     def reset(self) -> None:
+        """Reset the device and return it to config state."""
         if self.is_measuring():
             self._communicator.goto_config()
         self._communicator.send_and_receive(
@@ -173,6 +212,7 @@ class MtiDevice:
         self._state = MtiDeviceState.CONFIG
 
     def restore_factory_defaults(self) -> None:
+        """Restore factory defaults and return the device to config state."""
         if self.is_measuring():
             self._communicator.goto_config()
         self._communicator.send_and_receive(
@@ -185,6 +225,12 @@ class MtiDevice:
     # --- Output configuration ---
 
     def set_output_config(self, config: MtiDeviceOutputConfig) -> None:
+        """
+        Set the MTData2 output configuration.
+
+        Args:
+            config: The MTData2 output configuration to apply.
+        """
         self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, config.to_payload()),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
@@ -192,6 +238,12 @@ class MtiDevice:
         )
 
     def request_output_config(self) -> MtiDeviceOutputConfig:
+        """
+        Request the current MTData2 output configuration.
+
+        Returns:
+            The output configuration currently set on the device.
+        """
         message: XbusMessage = self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION),
             expected_mid=XbusMessageID.OUTPUT_CONFIGURATION_ACK,
@@ -214,6 +266,12 @@ class MtiDevice:
         return XbusBaudCode(message.payload[0]).to_rate()
 
     def request_options(self) -> MtiDeviceOptions:
+        """
+        Request the current device option flags.
+
+        Returns:
+            The option flags currently set on the device.
+        """
         message: XbusMessage = self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OPTION_FLAGS),
             expected_mid=XbusMessageID.OPTION_FLAGS_ACK,
@@ -222,6 +280,15 @@ class MtiDevice:
         return MtiDeviceOptions.from_payload(message.payload)
 
     def set_options(self, options: MtiDeviceOptions) -> None:
+        """
+        Set the device option flags.
+
+        Every flag is written explicitly, so this is an absolute write rather
+        than a partial update.
+
+        Args:
+            options: The option flags to apply.
+        """
         self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OPTION_FLAGS, options.to_payload()),
             expected_mid=XbusMessageID.OPTION_FLAGS_ACK,
@@ -267,6 +334,13 @@ class MtiDevice:
         )
 
     def request_available_filter_profiles(self) -> list[MtiDeviceFilterProfile]:
+        """
+        Request the filter profiles predefined in the device's firmware.
+
+        Returns:
+            The profiles the device supports, which are the valid arguments to
+            set_filter_profile().
+        """
         message: XbusMessage = self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.AVAILABLE_FILTER_PROFILES),
             expected_mid=XbusMessageID.AVAILABLE_FILTER_PROFILES_ACK,
@@ -281,6 +355,12 @@ class MtiDevice:
         return profile.to_classic_payload()
 
     def request_config(self) -> MtiDeviceConfig:
+        """
+        Request the full device configuration.
+
+        Returns:
+            The device configuration, as reported by the CONFIGURATION message.
+        """
         message: XbusMessage = self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.REQ_CONFIGURATION),
             expected_mid=XbusMessageID.CONFIGURATION,
@@ -296,6 +376,19 @@ class MtiDevice:
         expected_mid: XbusMessageID,
         timeout: float | None = None,
     ) -> XbusMessage:
+        """
+        Send an arbitrary Xbus message and wait for its acknowledgement.
+
+        An escape hatch for messages the device API does not model.
+
+        Args:
+            message: The Xbus message to send.
+            expected_mid: Message ID of the expected response.
+            timeout: Seconds to wait. Defaults to the device timeout.
+
+        Returns:
+            The first message received with the expected message ID.
+        """
         return self._communicator.send_and_receive(
             message,
             expected_mid=expected_mid,

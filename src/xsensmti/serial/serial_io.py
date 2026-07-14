@@ -35,6 +35,14 @@ def open_serial_port(
     The `read_timeout` is intentionally short (0.1 s) so that receive_message()
     can poll without blocking and enforce its own wall-clock deadline.
     Caller is responsible for closing the port.
+
+    Args:
+        port: Serial port path, e.g. '/dev/ttyUSB0'.
+        baud: Baud rate in bps.
+        read_timeout: Seconds a single read blocks before returning.
+
+    Returns:
+        The open port.
     """
     return serial.Serial(
         port=port,
@@ -53,7 +61,13 @@ def send_message(
     ser: serial.Serial,
     message: XbusMessage,
 ) -> None:
-    """Write one Xbus frame to the serial port."""
+    """
+    Write one Xbus frame to the serial port.
+
+    Args:
+        ser: Open serial port to write to.
+        message: The Xbus message to send.
+    """
     ser.write(message.to_bytes())
 
 
@@ -67,9 +81,21 @@ def receive_message(
     Read bytes from the serial port until an XbusMessage with expected_mid arrives.
 
     Accumulates bytes across reads so that partial frames are not lost.
-    Raises CommandTimeout if the deadline passes without a matching message.
-    Raises MtiDeviceError if the device replies with ERROR (0x42), carrying the
-    error code it reported. Raises UnexpectedResponse if WARNING (0x43) arrives.
+
+    Args:
+        ser: Open serial port to read from.
+        expected_mid: Message ID to wait for.
+        timeout: Seconds to wait before giving up.
+        chunk_size: Bytes to request per read.
+
+    Returns:
+        The first message received with the expected message ID.
+
+    Raises:
+        CommandTimeout: If the deadline passes without a matching message.
+        MtiDeviceError: If the device replies with ERROR (0x42), carrying the
+            error code it reported.
+        UnexpectedResponse: If WARNING (0x43) arrives instead.
     """
     port: str = ser.port or ""
     deadline: float = time.monotonic() + timeout
@@ -114,6 +140,17 @@ def send_and_receive(
     expected_mid: XbusMessageID,
     timeout: float = 2.0,
 ) -> XbusMessage:
-    """Send an Xbus message and wait for its acknowledgement."""
+    """
+    Send an Xbus message and wait for its acknowledgement.
+
+    Args:
+        ser: Open serial port to write to and read from.
+        message: The Xbus message to send.
+        expected_mid: Message ID of the expected response.
+        timeout: Seconds to wait before giving up.
+
+    Returns:
+        The first message received with the expected message ID.
+    """
     send_message(ser, message)
     return receive_message(ser, expected_mid, timeout)

@@ -129,17 +129,31 @@ class AsyncMtiDeviceCommunicator:
         return str(self._ser.port)
 
     def port_info(self) -> MtiPortInfo:
+        """Return the connection parameters for this device's port."""
         return self._port_info
 
     def device_info(self) -> MtiDeviceInfo:
+        """Return the identity information queried when the port was opened."""
         return self._device_info
 
     # --- Callback registration ---
 
     def set_message_callback(self, callback: AsyncXbusMessageCallback) -> None:
+        """
+        Register an async callback invoked for each received XbusMessage.
+
+        Args:
+            callback: Awaited by the internal dispatch task for each message.
+        """
         self._message_callback = callback
 
     def set_error_callback(self, callback: AsyncErrorCallback) -> None:
+        """
+        Register an async callback invoked when the reader raises.
+
+        Args:
+            callback: Awaited with the exception raised while reading.
+        """
         self._error_callback = callback
 
     # --- Communication ---

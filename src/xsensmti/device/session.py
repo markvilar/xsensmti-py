@@ -15,13 +15,33 @@ from .scanner import probe_port
 
 
 class MtiSession:
+    """
+    Context manager that opens an MtiDevice on a port and closes it on exit.
+
+    Probes the port on open, so it raises DeviceNotFound if no MTi responds.
+    """
+
     def __init__(self, port_info: MtiPortInfo, timeout: float = 5.0) -> None:
+        """
+        Args:
+            port_info: Connection parameters for the port to open.
+            timeout: Default timeout in seconds for Xbus send-and-receive calls.
+        """
         self._port_info: MtiPortInfo = port_info
         self._timeout: float = timeout
         self._communicator: MtiDeviceCommunicator | None = None
         self._device: MtiDevice | None = None
 
     def open(self) -> MtiDevice:
+        """
+        Open the port and return a device handle.
+
+        Returns:
+            A device handle, in config state.
+
+        Raises:
+            DeviceNotFound: If no MTi device responds on the port.
+        """
         probe_result: MtiProbeResult | None = probe_port(self._port_info, self._timeout)
         if probe_result is None:
             raise DeviceNotFound(f"no MTi device found on {self._port_info.port}")
@@ -43,6 +63,7 @@ class MtiSession:
         return self._device
 
     def close(self) -> None:
+        """Close the device and release the serial port. Safe to call twice."""
         if self._communicator is not None:
             self._communicator.close()
             self._communicator = None

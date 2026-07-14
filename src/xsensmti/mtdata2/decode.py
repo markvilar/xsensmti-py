@@ -21,6 +21,12 @@ from .exceptions import TruncatedPacket
 def decode_mtdata2_packets_from_message(message: XbusMessage) -> list[MtData2Packet]:
     """
     Decode all MTData2 packets from an MTDATA2 XbusMessage.
+
+    Args:
+        message: An XbusMessage with the MTDATA2 message ID.
+
+    Returns:
+        The packets carried in the message payload.
     """
     return list(iter_mtdata2_packets_from_message(message))
 
@@ -30,6 +36,12 @@ def iter_mtdata2_packets_from_message(
 ) -> Iterator[MtData2Packet]:
     """
     Yield MTData2 packets parsed from an MTDATA2 XbusMessage payload.
+
+    Args:
+        message: An XbusMessage with the MTDATA2 message ID.
+
+    Yields:
+        Each packet carried in the message payload.
     """
     if message.header.mid != XbusMessageID.MTDATA2:
         raise UnexpectedXbusMessage(
@@ -43,6 +55,12 @@ def iter_mtdata2_packets_from_payload(payload: bytes) -> Iterator[MtData2Packet]
     Yield MTData2 packets from a raw payload buffer.
 
     Packets whose XDI is not a known MtData2PacketID are silently skipped.
+
+    Args:
+        payload: Raw MTData2 payload bytes.
+
+    Yields:
+        Each recognised packet, in the order it appears.
     """
     offset: int = 0
     while offset + 3 <= len(payload):

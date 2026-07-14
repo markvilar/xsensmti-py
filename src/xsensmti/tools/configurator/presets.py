@@ -54,7 +54,16 @@ def get_preset(name: str, rate: int = 100) -> OutputPreset:
     Return XDI/rate pairs for the named preset at the given output rate.
 
     GNSS_PVT is always capped at 4 Hz regardless of `rate`.
-    Raises ValueError for unknown preset names or invalid rates.
+
+    Args:
+        name: Preset name, one of PRESET_NAMES.
+        rate: Output rate in Hz, one of VALID_RATES.
+
+    Returns:
+        The XDI/rate pairs making up the preset.
+
+    Raises:
+        ValueError: If the preset name is unknown or the rate is not supported.
     """
     if rate not in VALID_RATES:
         raise ValueError(
@@ -86,5 +95,11 @@ def build_output_configuration_payload(preset: OutputPreset) -> bytes:
     Encode an OutputPreset into the SetOutputConfiguration payload.
 
     Each XDI/rate pair becomes 4 bytes: [XDI_HI, XDI_LO, RATE_HI, RATE_LO].
+
+    Args:
+        preset: The XDI/rate pairs to encode.
+
+    Returns:
+        The payload for a SetOutputConfiguration message.
     """
     return MtiDeviceOutputConfig(rates=dict(preset)).to_payload()
