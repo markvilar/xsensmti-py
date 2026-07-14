@@ -56,9 +56,8 @@ class MtiScanResult:
     """
     Result of a single serial port scan.
 
-    Attributes
-    ----------
-    port_info: Connection parameters reported by the OS for this port.
+    Attributes:
+        port_info: Connection parameters reported by the OS for this port.
     """
 
     port_info: MtiPortInfo
@@ -69,10 +68,9 @@ class MtiProbeResult:
     """
     Result of probing a single serial port for an XSens MTi device.
 
-    Attributes
-    ----------
-    port_info: Connection parameters used during the probe.
-    device_info: Device identity queried during the probe.
+    Attributes:
+        port_info: Connection parameters used during the probe.
+        device_info: Device identity queried during the probe.
     """
 
     port_info: MtiPortInfo
@@ -100,10 +98,9 @@ class Sample[T: Measurement]:
     """
     A decoded measurement together with its receipt metadata.
 
-    Attributes
-    ----------
-    header: Receipt metadata for the Xbus message the measurement was decoded from.
-    payload: The decoded measurement.
+    Attributes:
+        header: Receipt metadata for the Xbus message the measurement was decoded from.
+        payload: The decoded measurement.
     """
 
     header: MtiMessageHeader
@@ -209,11 +206,10 @@ class MtiDeviceFilterProfile:
     a 16-bit profile type and nothing else — no label, no version. Pass the
     result through resolve_filter_profile() to fill those in.
 
-    Attributes
-    ----------
-    label: Profile label, empty when a classic payload has not been resolved.
-    version: Profile version, zero when a classic payload has not been resolved.
-    index: Numeric profile type, zero when the device reported a modern profile.
+    Attributes:
+        label: Profile label, empty when a classic payload has not been resolved.
+        version: Profile version, zero when a classic payload has not been resolved.
+        index: Numeric profile type, zero when the device reported a modern profile.
     """
 
     label: str
@@ -279,10 +275,9 @@ def resolve_filter_profile(
     the label. Look the profile up among those the device reports as available to
     recover the full triple. Returns the profile unchanged if no match is found.
 
-    Arguments
-    ---------
-    profile: Profile parsed from a FILTER_PROFILE_ACK payload.
-    available: Profiles reported by AVAILABLE_FILTER_PROFILES_ACK.
+    Args:
+        profile: Profile parsed from a FILTER_PROFILE_ACK payload.
+        available: Profiles reported by AVAILABLE_FILTER_PROFILES_ACK.
     """
     if not profile.label:
         for candidate in available:
@@ -312,9 +307,8 @@ def uses_modern_filter_profile(product_code: str) -> bool:
     and the device does not advertise which it speaks. The MTi 600-series uses
     the modern (label) form; every other family uses the classic (2-byte) form.
 
-    Arguments
-    ---------
-    product_code: Product code reported by the device, e.g. "MTi-G-700-2A5G4".
+    Args:
+        product_code: Product code reported by the device, e.g. "MTi-G-700-2A5G4".
     """
     match: re.Match[str] | None = _MTI_MODEL_PATTERN.search(product_code)
     if match is None:
@@ -375,9 +369,8 @@ class MtiDeviceOutputConfig:
     Packet IDs carry the format and coordinate-frame bits, so the same quantity
     in different coordinate frames are distinct entries.
 
-    Attributes
-    ----------
-    rates: Mapping from MTData2 packet ID to output rate in Hz.
+    Attributes:
+        rates: Mapping from MTData2 packet ID to output rate in Hz.
     """
 
     rates: Mapping[MtData2PacketID, int]

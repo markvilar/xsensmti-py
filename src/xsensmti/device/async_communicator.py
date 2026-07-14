@@ -41,15 +41,14 @@ class AsyncMtiDeviceCommunicator:
 
     Construct with the `create()` classmethod — not `__init__` directly.
 
-    Attributes
-    ----------
-    _ser: Open pyserial port. Blocking calls are offloaded via asyncio.to_thread.
-    _reader: Background thread reading Xbus messages from the serial port.
-    _loop: Event loop captured at construction time for call_soon_threadsafe.
-    _queue: Thread-to-loop bridge. The reader thread enqueues; the dispatch task dequeues.
-    _dispatch_task: Asyncio task that drains the queue and fires the message callback.
-    _message_callback: Async callable invoked for each received XbusMessage.
-    _error_callback: Async callable invoked when the reader thread or dispatch task faults.
+    Attributes:
+        _ser: Open pyserial port. Blocking calls are offloaded via asyncio.to_thread.
+        _reader: Background thread reading Xbus messages from the serial port.
+        _loop: Event loop captured at construction time for call_soon_threadsafe.
+        _queue: Thread-to-loop bridge. The reader thread enqueues; the dispatch task dequeues.
+        _dispatch_task: Asyncio task that drains the queue and fires the message callback.
+        _message_callback: Async callable invoked for each received XbusMessage.
+        _error_callback: Async callable invoked when the reader thread or dispatch task faults.
     """
 
     _port_info: MtiPortInfo
@@ -76,15 +75,13 @@ class AsyncMtiDeviceCommunicator:
         Opens the port, resets the input buffer, sends GOTOCONFIG, and starts
         the internal dispatch task. Raises on serial or Xbus errors.
 
-        Arguments
-        ---------
-        port_info: Connection parameters for the serial port to open.
-        device_info: Identity information for the device on this port.
-        timeout: Default timeout in seconds for Xbus send-and-receive calls.
+        Args:
+            port_info: Connection parameters for the serial port to open.
+            device_info: Identity information for the device on this port.
+            timeout: Default timeout in seconds for Xbus send-and-receive calls.
 
-        Returns
-        -------
-        A fully initialised AsyncMtiDeviceCommunicator in config state.
+        Returns:
+            A fully initialised AsyncMtiDeviceCommunicator in config state.
         """
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         queue: asyncio.Queue[XbusMessage] = asyncio.Queue(maxsize=_QUEUE_MAX_SIZE)
@@ -151,9 +148,8 @@ class AsyncMtiDeviceCommunicator:
         """
         Send an Xbus message without waiting for a response.
 
-        Arguments
-        ---------
-        message: The Xbus message to write to the serial port.
+        Args:
+            message: The Xbus message to write to the serial port.
         """
         await asyncio.to_thread(send_message, self._ser, message)
 
@@ -166,15 +162,13 @@ class AsyncMtiDeviceCommunicator:
         """
         Send an Xbus message and wait for its acknowledgement.
 
-        Arguments
-        ---------
-        message: The Xbus message to send.
-        expected_mid: Message ID of the expected response.
-        timeout: Maximum seconds to wait for a response. Defaults to the communicator timeout.
+        Args:
+            message: The Xbus message to send.
+            expected_mid: Message ID of the expected response.
+            timeout: Maximum seconds to wait for a response. Defaults to the communicator timeout.
 
-        Returns
-        -------
-        The first matching XbusMessage received before the deadline.
+        Returns:
+            The first matching XbusMessage received before the deadline.
         """
         effective_timeout: float = timeout if timeout is not None else self._timeout
         return await asyncio.to_thread(

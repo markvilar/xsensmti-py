@@ -58,14 +58,12 @@ def scan_port(port: str, baud: int = 115200) -> MtiScanResult | None:
 
     No serial port is opened. Returns None if the port is not listed by the OS.
 
-    Arguments
-    ---------
-    port: Serial port path to look up (e.g. "/dev/ttyUSB0").
-    baud: Baud rate to embed in the returned port info.
+    Args:
+        port: Serial port path to look up (e.g. "/dev/ttyUSB0").
+        baud: Baud rate to embed in the returned port info.
 
-    Returns
-    -------
-    An MtiScanResult if the port is found, or None.
+    Returns:
+        An MtiScanResult if the port is found, or None.
     """
     from serial.tools.list_ports_common import ListPortInfo
 
@@ -89,14 +87,12 @@ def scan_ports(baud: int = 115200, usb_only: bool = False) -> list[MtiScanResult
 
     No serial ports are opened.
 
-    Arguments
-    ---------
-    baud: Baud rate to embed in each returned port info.
-    usb_only: When True, only include ports with a USB vendor ID.
+    Args:
+        baud: Baud rate to embed in each returned port info.
+        usb_only: When True, only include ports with a USB vendor ID.
 
-    Returns
-    -------
-    A list of MtiScanResult, one per matching port.
+    Returns:
+        A list of MtiScanResult, one per matching port.
     """
     from serial.tools.list_ports_common import ListPortInfo
 
@@ -134,14 +130,12 @@ def discover_baudrate(port: str, timeout: float = 0.5) -> int | None:
     setting. Use request_baudrate() for the stored setting, which applies to the
     device's serial interface.
 
-    Arguments
-    ---------
-    port: Serial port path, e.g. '/dev/ttyUSB0'.
-    timeout: Maximum seconds to wait for a response at each candidate rate.
+    Args:
+        port: Serial port path, e.g. '/dev/ttyUSB0'.
+        timeout: Maximum seconds to wait for a response at each candidate rate.
 
-    Returns
-    -------
-    A baud rate in bps at which the device responds, or None if none did.
+    Returns:
+        A baud rate in bps at which the device responds, or None if none did.
     """
     for baud in BAUD_RATES:
         port_info: MtiPortInfo = MtiPortInfo(port=port, baud=baud)
@@ -159,14 +153,12 @@ def probe_port(port_info: MtiPortInfo, timeout: float = 2.0) -> MtiProbeResult |
     Opens the port, puts the device in Config State, requests its identity,
     then closes the port. Raises no exceptions on failure — returns None instead.
 
-    Arguments
-    ---------
-    port_info: Connection parameters for the port to probe.
-    timeout: Maximum seconds to wait for each Xbus response.
+    Args:
+        port_info: Connection parameters for the port to probe.
+        timeout: Maximum seconds to wait for each Xbus response.
 
-    Returns
-    -------
-    An MtiProbeResult if an MTi device responds, or None.
+    Returns:
+        An MtiProbeResult if an MTi device responds, or None.
     """
     ser: serial.Serial | None = None
     try:
@@ -217,15 +209,13 @@ def probe_ports(
     Each port is probed in a separate thread. Ports where no device responds
     are silently skipped.
 
-    Arguments
-    ---------
-    port_infos: Connection parameters for the ports to probe.
-    timeout: Maximum seconds to wait for each Xbus response per port.
-    max_workers: Maximum number of threads to use. Defaults to one per port.
+    Args:
+        port_infos: Connection parameters for the ports to probe.
+        timeout: Maximum seconds to wait for each Xbus response per port.
+        max_workers: Maximum number of threads to use. Defaults to one per port.
 
-    Returns
-    -------
-    A list of MtiProbeResult for each port where a device was found.
+    Returns:
+        A list of MtiProbeResult for each port where a device was found.
     """
     futures: list[Future[MtiProbeResult | None]] = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:

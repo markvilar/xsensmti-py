@@ -63,10 +63,9 @@ class AsyncMtiDevice:
         """
         Wrap a communicator and register internal async callbacks on it.
 
-        Arguments
-        ---------
-        communicator: Open communicator for the device, already in config state.
-        timeout: Default timeout in seconds for Xbus send-and-receive calls.
+        Args:
+            communicator: Open communicator for the device, already in config state.
+            timeout: Default timeout in seconds for Xbus send-and-receive calls.
         """
         self._communicator: AsyncMtiDeviceCommunicator = communicator
         self._timeout: float = timeout
@@ -102,9 +101,8 @@ class AsyncMtiDevice:
         """
         Register an async callback invoked for each received MtiMessage.
 
-        Arguments
-        ---------
-        callback: Async callable receiving the full MtiMessage, or None to clear.
+        Args:
+            callback: Async callable receiving the full MtiMessage, or None to clear.
         """
         self._on_message_callback = callback
 
@@ -120,10 +118,9 @@ class AsyncMtiDevice:
         callback receives exactly that Sample — i.e. the registration type and
         the received type are the same.
 
-        Arguments
-        ---------
-        sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
-        callback: Async callable receiving the Sample, or None to clear the registration.
+        Args:
+            sample_type: The Sample alias to match (e.g. OrientationQuaternionSample).
+            callback: Async callable receiving the Sample, or None to clear the registration.
         """
         measurement_type: type[Measurement] = get_args(sample_type)[0]
         if callback is None:
@@ -179,9 +176,8 @@ class AsyncMtiDevice:
         """
         Set the MTData2 output configuration.
 
-        Arguments
-        ---------
-        config: The MTData2 output configuration to apply.
+        Args:
+            config: The MTData2 output configuration to apply.
         """
         await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION, config.to_payload()),
@@ -193,9 +189,8 @@ class AsyncMtiDevice:
         """
         Request and return the current MTData2 output configuration.
 
-        Returns
-        -------
-        The MTData2 output configuration currently set on the device.
+        Returns:
+            The MTData2 output configuration currently set on the device.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OUTPUT_CONFIGURATION),
@@ -211,9 +206,8 @@ class AsyncMtiDevice:
         Only answerable once communication is established — the request is itself
         an Xbus message. Use discover_baudrate() when the rate is unknown.
 
-        Returns
-        -------
-        The configured baud rate in bps.
+        Returns:
+            The configured baud rate in bps.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.SET_BAUDRATE),
@@ -226,9 +220,8 @@ class AsyncMtiDevice:
         """
         Request and return the current device option flags.
 
-        Returns
-        -------
-        The current MtiDeviceOptions.
+        Returns:
+            The current MtiDeviceOptions.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OPTION_FLAGS),
@@ -241,9 +234,8 @@ class AsyncMtiDevice:
         """
         Set the device option flags.
 
-        Arguments
-        ---------
-        options: The option flags to apply. Every flag is written explicitly.
+        Args:
+            options: The option flags to apply. Every flag is written explicitly.
         """
         await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.OPTION_FLAGS, options.to_payload()),
@@ -260,9 +252,8 @@ class AsyncMtiDevice:
         resolved against the device's available profiles to recover the full triple.
         This costs a second round trip.
 
-        Returns
-        -------
-        The current MtiDeviceFilterProfile.
+        Returns:
+            The current MtiDeviceFilterProfile.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.FILTER_PROFILE),
@@ -285,9 +276,8 @@ class AsyncMtiDevice:
         request_available_filter_profiles(). The profile is not validated here —
         the device rejects an unknown one with an MtiDeviceError.
 
-        Arguments
-        ---------
-        profile: The filter profile to select.
+        Args:
+            profile: The filter profile to select.
         """
         await self._communicator.send_and_receive(
             build_xbus_command(
@@ -301,10 +291,9 @@ class AsyncMtiDevice:
         """
         Request the filter profiles predefined in the device's firmware.
 
-        Returns
-        -------
-        The profiles the device supports, which are the valid arguments to
-        set_filter_profile().
+        Returns:
+            The profiles the device supports, which are the valid arguments to
+            set_filter_profile().
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.AVAILABLE_FILTER_PROFILES),
@@ -323,9 +312,8 @@ class AsyncMtiDevice:
         """
         Request and return the full device configuration.
 
-        Returns
-        -------
-        The current MtiDeviceConfig.
+        Returns:
+            The current MtiDeviceConfig.
         """
         message: XbusMessage = await self._communicator.send_and_receive(
             build_xbus_command(XbusMessageID.REQ_CONFIGURATION),
@@ -345,15 +333,13 @@ class AsyncMtiDevice:
         """
         Send a raw Xbus message and wait for its acknowledgement.
 
-        Arguments
-        ---------
-        message: The Xbus message to send.
-        expected_mid: Message ID of the expected response.
-        timeout: Maximum seconds to wait. Defaults to the device timeout.
+        Args:
+            message: The Xbus message to send.
+            expected_mid: Message ID of the expected response.
+            timeout: Maximum seconds to wait. Defaults to the device timeout.
 
-        Returns
-        -------
-        The first matching XbusMessage received before the deadline.
+        Returns:
+            The first matching XbusMessage received before the deadline.
         """
         return await self._communicator.send_and_receive(
             message,
