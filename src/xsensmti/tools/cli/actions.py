@@ -28,7 +28,14 @@ from ..recorder import (
 
 
 def dispatch_scan_devices(baud: int, timeout: float, usb_only: bool) -> None:
-    """Call the scanner and echo found MTi devices to stdout."""
+    """
+    Call the scanner and echo found MTi devices to stdout.
+
+    Args:
+        baud: Baud rate to probe at.
+        timeout: Seconds to wait for each device to respond.
+        usb_only: When True, only probe ports with a USB vendor ID.
+    """
     port_infos = [r.port_info for r in scan_ports(baud=baud, usb_only=usb_only)]
     scan_results: list[MtiProbeResult] = probe_ports(port_infos, timeout=timeout)
 
@@ -61,7 +68,16 @@ def dispatch_configure_device(
     baud: int,
     timeout: float,
 ) -> None:
-    """Resolve the preset, configure the device, and echo the result."""
+    """
+    Resolve the preset, configure the device, and echo the result.
+
+    Args:
+        port: Serial port path of the device.
+        preset_name: Name of the output preset to apply.
+        rate: Output rate in Hz.
+        baud: Baud rate to connect at.
+        timeout: Seconds to wait for each device response.
+    """
     try:
         output_preset: OutputPreset = get_preset(preset_name, rate)
     except ValueError as exc:
@@ -96,7 +112,16 @@ def dispatch_record_device(
     timeout: float,
     chunk_size: int,
 ) -> None:
-    """Verify the device, record its output, and echo the session summary."""
+    """
+    Verify the device, record its output, and echo the session summary.
+
+    Args:
+        port: Serial port path of the device.
+        output: Path to write the recording to, or None to generate a filename.
+        baud: Baud rate to connect at.
+        timeout: Seconds to wait for each device response.
+        chunk_size: Bytes to read per serial read.
+    """
     if output is None:
         timestamp: str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         output_path: Path = (

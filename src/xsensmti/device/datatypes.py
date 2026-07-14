@@ -152,6 +152,12 @@ class MtiDeviceOptions:
 
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceOptions:
+        """
+        Parse the option flags from an OPTION_FLAGS_ACK payload.
+
+        Args:
+            payload: The 4-byte option flags bitmask.
+        """
         flags = MtiDeviceOptionFlags(int.from_bytes(payload, "big"))
         return cls(
             disable_auto_store=_Flags.DISABLE_AUTO_STORE in flags,
@@ -218,6 +224,16 @@ class MtiDeviceFilterProfile:
 
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceFilterProfile:
+        """
+        Parse a filter profile from a FILTER_PROFILE_ACK payload.
+
+        The payload is lossy: classic devices report only the numeric type and
+        modern devices only the label. Pass the result through
+        resolve_filter_profile() to recover the missing fields.
+
+        Args:
+            payload: A 2-byte profile type, or an ASCII label.
+        """
         if len(payload) == 2:
             return cls(label="", version=0, index=int.from_bytes(payload, "big"))
         return cls(
@@ -234,6 +250,12 @@ class MtiDeviceFilterProfile:
         The payload always holds 5 slots of 22 bytes — type (1 byte), version
         (1 byte), and a 20-byte space-padded label. Devices with fewer than 5
         profiles report the remaining slots with a type of 0; those are skipped.
+
+        Args:
+            payload: Payload of an AVAILABLE_FILTER_PROFILES_ACK message.
+
+        Returns:
+            The profiles the device reports, excluding the empty slots.
         """
         profiles: list[MtiDeviceFilterProfile] = []
         for offset in range(0, len(payload), _FILTER_PROFILE_SLOT_SIZE):
@@ -337,6 +359,12 @@ class MtiDeviceConfig:
 
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceConfig:
+        """
+        Parse the device configuration from a CONFIGURATION payload.
+
+        Args:
+            payload: The 118-byte CONFIGURATION payload.
+        """
         num_devices: int = int.from_bytes(payload[96:98], "big")
 
         if payload[0:4] == b"\x00\x00\x00\x00":
@@ -377,6 +405,12 @@ class MtiDeviceOutputConfig:
 
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceOutputConfig:
+        """
+        Parse the output configuration from an OUTPUT_CONFIGURATION_ACK payload.
+
+        Args:
+            payload: A sequence of 4-byte packet ID and rate entries.
+        """
         rates: dict[MtData2PacketID, int] = dict()
         for offset in range(0, len(payload), _OUTPUT_CONFIG_ENTRY_SIZE):
             packet_id: MtData2PacketID = MtData2PacketID(
@@ -386,13 +420,19 @@ class MtiDeviceOutputConfig:
         return cls(rates=rates)
 
     def to_payload(self) -> bytes:
+        """Encode the output configuration as an OUTPUT_CONFIGURATION payload."""
         return b"".join(
             int(packet_id).to_bytes(2, "big") + rate.to_bytes(2, "big")
             for packet_id, rate in self.rates.items()
         )
 
     def rate_for(self, packet_id: MtData2PacketID) -> int | None:
-        """Return the output rate for a packet ID, or None if it is not configured."""
+        """
+        Return the output rate for a packet ID, or None if it is not configured.
+
+        Args:
+            packet_id: The MTData2 packet ID to look up.
+        """
         return self.rates.get(packet_id)
 
     def __contains__(self, packet_id: object) -> bool:

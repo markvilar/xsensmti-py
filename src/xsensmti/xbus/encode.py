@@ -24,6 +24,14 @@ def encode_xbus_message(
     Uses standard framing for payloads up to 254 bytes and extended framing
     for larger payloads. BID defaults to 0xFF (broadcast), which is correct
     for all host-to-device commands.
+
+    Args:
+        mid: Message ID of the message to encode.
+        payload: Message payload, empty for a request.
+        bid: Bus ID.
+
+    Returns:
+        The complete frame, ready to write to the serial port.
     """
     return build_xbus_message(bid, XbusMessageID(mid), payload).to_bytes()
 

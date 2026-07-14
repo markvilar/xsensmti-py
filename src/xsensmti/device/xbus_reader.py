@@ -38,6 +38,7 @@ class XbusStreamReader:
         self._thread: threading.Thread | None = None
 
     def start(self) -> None:
+        """Start the reader thread. Does nothing if it is already running."""
         if self._state == XbusStreamReaderState.RUNNING:
             return
         self._stop_event.clear()
@@ -50,6 +51,7 @@ class XbusStreamReader:
         self._thread.start()
 
     def stop(self) -> None:
+        """Stop the reader thread and wait for it to exit. Safe to call twice."""
         if self._thread is None:
             return
         self._stop_event.set()
@@ -59,9 +61,11 @@ class XbusStreamReader:
             self._state = XbusStreamReaderState.IDLE
 
     def state(self) -> XbusStreamReaderState:
+        """Return the current reader state."""
         return self._state
 
     def is_running(self) -> bool:
+        """Return True if the reader thread is running."""
         return self._state == XbusStreamReaderState.RUNNING
 
     def _loop(self) -> None:

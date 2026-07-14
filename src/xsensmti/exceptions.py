@@ -28,7 +28,13 @@ class MtiDeviceError(XsensError):
 
     @classmethod
     def from_payload(cls, payload: bytes) -> MtiDeviceError:
-        """Parse an ERROR message payload into an MtiDeviceError."""
+        """
+        Parse an ERROR message payload into an MtiDeviceError.
+
+        Args:
+            payload: Payload of an Xbus ERROR message: an error code, optionally
+                followed by further bytes.
+        """
         raw_code: int = payload[0]
         code: XbusErrorCode | int
         try:
