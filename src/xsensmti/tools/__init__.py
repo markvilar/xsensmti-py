@@ -24,4 +24,16 @@ from .recorder import (
     record_device as record_device,
 )
 
-__all__ = []
+__all__: list[str] = [
+    "XsensError",
+    "DeviceNotFound",
+    "CommandTimeout",
+    "UnexpectedResponse",
+    "ConfigurationError",
+    "PRESET_NAMES",
+    "VALID_RATES",
+    "get_preset",
+    "build_output_configuration_payload",
+    "RecordingResult",
+    "record_device",
+]

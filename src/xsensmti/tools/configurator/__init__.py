@@ -7,4 +7,10 @@ from .presets import (
     build_output_configuration_payload as build_output_configuration_payload,
 )
 
-__all__ = []
+__all__: list[str] = [
+    "OutputPreset",
+    "PRESET_NAMES",
+    "VALID_RATES",
+    "get_preset",
+    "build_output_configuration_payload",
+]

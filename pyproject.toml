@@ -16,6 +16,12 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/markvilar/xsensmti-py"
+Documentation = "https://markvilar.github.io/xsensmti-py/"
+Repository = "https://github.com/markvilar/xsensmti-py"
+Issues = "https://github.com/markvilar/xsensmti-py/issues"
+
 [project.scripts]
 xsensmti = "xsensmti.tools.cli.commands:main"
 
@@ -38,6 +44,11 @@ namespace_packages = true
 line-length = 88
 
 [dependency-groups]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
+]
 dev = [
     "mypy>=1.20.2",
     "pytest>=8.3.4",

@@ -1,0 +1,63 @@
+site_name: xsensmti
+site_description: A Python library for working with XSens MTi sensors.
+repo_url: https://github.com/markvilar/xsensmti-py
+repo_name: markvilar/xsensmti-py
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            # Headings: class name without the internal module path, methods
+            # nested beneath it. Callers import from the package, not the module.
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            heading_level: 2
+            # Signatures come from the annotations, not the docstrings.
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            docstring_style: google
+            docstring_section_style: table
+            members_order: source
+            show_source: true
+            show_submodules: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - API reference:
+      - xbus: api/xbus.md
+      - mtdata2: api/mtdata2.md
+      - device: api/device.md
+      - serial: api/serial.md
+      - tools: api/tools.md
+      - exceptions: api/exceptions.md

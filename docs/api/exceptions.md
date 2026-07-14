@@ -1,0 +1,3 @@
+# `xsensmti.exceptions`
+
+::: xsensmti.exceptions
