@@ -188,13 +188,29 @@ The typical data flow is: raw serial bytes → `decode_xbus_messages_from_buffer
 
 The XSens MT SDK (C++) is available at https://github.com/markvilar/xsens-sdk — useful for understanding the reference architecture (`XsControl`, `XsDevice`, `XsCallback`, `XsDataPacket`) when making design decisions for this library.
 
-XSens product documentation is available under `docs/xsens/`:
+XSens product documentation is available under `vendor/xsens/`:
 
 - `xsens_mti_family_reference_manual.pdf` — MTi family reference manual
 - `xsens_mti_low_level_documentation.pdf` — low-level Xbus protocol documentation
-- `xsens_mti_600_series_user_manual.pdf` — MTi 600-series (includes MTi 700) user manual
+- `xsens_mti_600_series_user_manual.pdf` — MTi 600-series user manual (610/620/630/670/680; does **not** cover the MTi-700, which is a 100-series MkIV device)
 - `xsens_mti_10_100_series_user_manual.pdf` — MTi 10/100-series user manual
 - `xsens_mti_usermanual.pdf` — general MTi user manual
+
+Where the PDFs and the SDK disagree, **trust the SDK**. The low-level PDF has been
+wrong on at least three points: the classic `SetFilterProfile` payload format, the
+`HighPerformanceEDR` filter profile type code, and baud code `0x0E`.
+
+### Repository layout for documentation
+
+| Directory | Contents | Published? |
+| --- | --- | --- |
+| `docs/` | MkDocs source for the public documentation site | Yes |
+| `notes/` | Internal working material — debugging write-ups, dev notes | No |
+| `vendor/` | Third-party material, i.e. the XSens PDFs | No |
+| `site/` | MkDocs build output (gitignored) | — |
+
+Keep the XSens PDFs out of `docs/`. MkDocs publishes everything under `docs/`, and
+the manuals are XSens copyrighted material — publishing them would be redistribution.
 
 ### Definition order
 

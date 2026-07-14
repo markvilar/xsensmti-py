@@ -35,7 +35,7 @@ def goto_config_mode(ser: serial.Serial, timeout: float) -> None:
     Fast path: send GOTOCONFIG and wait up to `timeout` seconds for ACK.
     Fallback: send RESET then retry GOTOCONFIG every 100 ms for up to
     _RECOVERY_TIMEOUT seconds. Devices typically become responsive ~1.7 s
-    after RESET (see docs/debug/mti_goto_config_mode_not_responding.md).
+    after RESET (see notes/debug/mti_gotoconfig_not_responding.md).
     """
     try:
         send_and_receive(
