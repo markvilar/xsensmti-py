@@ -1,0 +1,3 @@
+# `xsensmti.xbus`
+
+::: xsensmti.xbus

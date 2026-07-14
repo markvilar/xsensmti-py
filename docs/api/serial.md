@@ -1,0 +1,3 @@
+# `xsensmti.serial`
+
+::: xsensmti.serial

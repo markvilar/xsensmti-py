@@ -13,4 +13,11 @@ from .operations import (
     goto_measurement_mode as goto_measurement_mode,
 )
 
-__all__: list[str] = []
+__all__: list[str] = [
+    "open_serial_port",
+    "send_message",
+    "receive_message",
+    "send_and_receive",
+    "goto_config_mode",
+    "goto_measurement_mode",
+]
